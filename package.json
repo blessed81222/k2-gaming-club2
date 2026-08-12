@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "server": "node server/index.mjs"
+    "server": "node --env-file=.env server/index.mjs"
   },
   "dependencies": {
     "@vkid/sdk": "^2.6.7",

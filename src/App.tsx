@@ -134,7 +134,6 @@ const prices = {
     },
   },
 
-  // Исправлено: ключ теперь соответствует Zone ("PREMIUM")
   PREMIUM: {
     hourly: {
       day: {
@@ -176,7 +175,6 @@ function isWeekend(date: string): boolean {
   return weekday === 0 || weekday === 6;
 }
 
-// Исправлено: правильное объявление функции
 function calculatePrice(
   zone: Zone,
   date: string,
@@ -187,20 +185,13 @@ function calculatePrice(
   const type = isWeekend(date) ? "weekend" : "weekday";
   const zonePrice = prices[zone];
 
-  // =========================
-  // ПАКЕТЫ
-  // =========================
   if (packageType !== "hourly") {
     return zonePrice.packages[packageType][type];
   }
 
-  // =========================
-  // ПОЧАСОВЫЕ ТАРИФЫ
-  // =========================
   let period: "day" | "night";
   let durationKey: "one" | "three" | "five";
 
-  // Определяем период и ключ длительности
   if (duration === 1) {
     const hour = Number(time.split(":")[0]);
     period = hour >= 8 && hour < 17 ? "day" : "night";
@@ -214,8 +205,6 @@ function calculatePrice(
     period = hour >= 8 && hour < 14 ? "day" : "night";
     durationKey = "five";
   } else {
-    // Если длительность не 1, 3 или 5 (например, 24), используем тариф за 5 часов и пересчитываем пропорционально
-    // Это защита от некорректного ввода; в идеале UI не должен позволять такие комбинации
     const hour = Number(time.split(":")[0]);
     period = hour >= 8 && hour < 14 ? "day" : "night";
     const basePrice = zonePrice.hourly[period]["five"][type];
@@ -239,11 +228,34 @@ function loadBookings(): Booking[] {
 
 function App() {
   const today = getToday();
+
+  // ==================================================
+  // ВСЕ СОСТОЯНИЯ ВЫНЕСЕНЫ НАВЕРХ
+  // ==================================================
   const [vkConfigured, setVkConfigured] = useState(false);
   const [vkUser, setVkUser] = useState<K2User | null>(null);
   const [vkLoading, setVkLoading] = useState(false);
   const [vkError, setVkError] = useState("");
 
+  const [bookings, setBookings] = useState<Booking[]>(loadBookings);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [myBookingsOpen, setMyBookingsOpen] = useState(false);
+
+  const [clientName, setClientName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [date, setDate] = useState(today);
+  const [time, setTime] = useState("18:00");
+  const [duration, setDuration] = useState(1);
+  const [packageType, setPackageType] = useState<"hourly" | "morning" | "day" | "night" | "daily">("hourly");
+
+  const selectedComputer = computers.find((pc) => pc.id === selected);
+
+  // ==================================================
+  // ЭФФЕКТЫ
+  // ==================================================
+
+  // ЗАГРУЗКА КОНФИГУРАЦИИ VK С БЕКЕНДА (единственная инициализация)
   useEffect(() => {
     let cancelled = false;
 
@@ -253,7 +265,7 @@ function App() {
         const data = await response.json();
         if (!cancelled && data.vkConfigured && data.vkAppId) {
           setVkConfigured(true);
-          initVkLogin(Number(data.vkAppId));
+          initVkLogin(Number(data.vkAppId)); // эта функция сама вызывает VKID.Config.init
         }
       } catch (error) {
         console.error("VK config error:", error);
@@ -261,12 +273,12 @@ function App() {
     }
 
     loadVkConfig();
-
     return () => {
       cancelled = true;
     };
   }, []);
 
+  // ОБРАБОТКА CALLBACK ПОСЛЕ ВОЗВРАТА ИЗ VK ID
   useEffect(() => {
     const callback = getVkCallbackParams();
     if (!callback) return;
@@ -306,33 +318,15 @@ function App() {
       .finally(() => setVkLoading(false));
   }, []);
 
-  const [bookings, setBookings] = useState<Booking[]>(loadBookings);
-  const [selected, setSelected] = useState<number | null>(null);
-
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const [myBookingsOpen, setMyBookingsOpen] = useState(false);
-
-  const [clientName, setClientName] = useState("");
-  const [phone, setPhone] = useState("");
-
-  const [date, setDate] = useState(today);
-  const [time, setTime] = useState("18:00");
-  const [duration, setDuration] = useState(1);
-  const [packageType, setPackageType] = useState<
-    "hourly" | "morning" | "day" | "night" | "daily"
-  >("hourly");
-
-const selectedComputer = computers.find((pc) => pc.id === selected);
-  // ==================================================
   // СОХРАНЕНИЕ БРОНЕЙ
-  // ==================================================
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
   }, [bookings]);
 
   // ==================================================
-  // ПРОВЕРКА ЗАНЯТОСТИ ПК
+  // ЛОГИКА
   // ==================================================
+
   function isComputerBusy(computerId: number): boolean {
     const startNew = createLocalDate(date, time);
     const endNew = new Date(startNew.getTime() + duration * 60 * 60 * 1000);
@@ -345,24 +339,16 @@ const selectedComputer = computers.find((pc) => pc.id === selected);
     });
   }
 
-  // ==================================================
-  // ВЫБОР ПК
-  // ==================================================
-function handleComputerClick(id: number) {
-  setSelected(id);
-  setBookingOpen(true);
-}
-  // ==================================================
-  // ЗАКРЫТИЕ МОДАЛКИ
-  // ==================================================
+  function handleComputerClick(id: number) {
+    setSelected(id);
+    setBookingOpen(true);
+  }
+
   function closeBookingModal() {
     setBookingOpen(false);
     setSelected(null);
   }
 
-  // ==================================================
-  // СОЗДАНИЕ БРОНИ
-  // ==================================================
   function createBooking() {
     if (selected === null || !clientName.trim() || !phone.trim()) {
       alert("Заполни имя и телефон.");
@@ -393,7 +379,6 @@ function handleComputerClick(id: number) {
       return;
     }
 
-    // Исправлено: передаём packageType
     const price = calculatePrice(computer.zone, date, time, duration, packageType);
 
     const newBooking: Booking = {
@@ -418,9 +403,6 @@ function handleComputerClick(id: number) {
     alert(`Бронь создана!\n\nПК №${computer.id}\nСтоимость: ${price} ₽`);
   }
 
-  // ==================================================
-  // ОТМЕНА БРОНИ
-  // ==================================================
   function cancelBooking(id: string) {
     setBookings((prev) => prev.filter((item) => item.id !== id));
   }
@@ -430,23 +412,17 @@ function handleComputerClick(id: number) {
   // ==================================================
   return (
     <div className="app">
-      {/* ==================================================
-          HEADER
-      ================================================== */}
       <header className="header">
         <div className="header-brand">
-          <h1>
-            K2 <span>Gaming Club</span>
-          </h1>
+          <h1>K2 <span>Gaming Club</span></h1>
           <p>Бронирование компьютеров</p>
         </div>
         <div className="header-contact">
           <div className="work-time">🔥Работаем 24/7 — всегда на связи!</div>
           <div className="address">📍ул. Большая Московская, д. 140</div>
-          <div className="phone">
-            📲Контакты: <a href="tel:+78162273777">8 (8162) 273-777</a>
-          </div>
+          <div className="phone">📲Контакты: <a href="tel:+78162273777">8 (8162) 273-777</a></div>
         </div>
+
         {vkUser ? (
           <button className="vk-profile-btn" type="button" title="VK ID профиль">
             <span className="vk-avatar">{vkUser.firstName?.[0] || "VK"}</span>
@@ -458,12 +434,11 @@ function handleComputerClick(id: number) {
             type="button"
             disabled={!vkConfigured || vkLoading}
             onClick={() => beginVkLogin()}
-            title={!vkConfigured ? "Сначала настрой VK ID" : "Войти через VK ID"}
+            title={vkConfigured ? "Войти через VK ID" : "Сначала настрой VK ID"}
           >
             {vkLoading ? "Вход..." : "Войти через VK"}
           </button>
         )}
-
         {vkError && <div className="vk-error">{vkError}</div>}
 
         <button className="my-bookings-btn" onClick={() => setMyBookingsOpen(true)}>
@@ -471,57 +446,30 @@ function handleComputerClick(id: number) {
         </button>
       </header>
 
-      {/* ==================================================
-          MAP
-      ================================================== */}
       <section className="club-map">
-        {/* VIP */}
-        <div className="map-zone PREMIUM-zone">
-          <h2>PREMIUM</h2>
-        </div>
-        {/* BOOT CAMP */}
-        <div className="map-zone bootcamp-zone">
-          <h2>Boot Camp</h2>
-        </div>
-        {/* STANDART + */}
-        <div className="map-zone standart-plus-zone">
-          <h2>Standart +</h2>
-        </div>
-        {/* STANDART */}
-        <div className="map-zone standart-zone">
-          <h2>Standart</h2>
-        </div>
+        {/* Зоны */}
+        <div className="map-zone PREMIUM-zone"><h2>PREMIUM</h2></div>
+        <div className="map-zone bootcamp-zone"><h2>Boot Camp</h2></div>
+        <div className="map-zone standart-plus-zone"><h2>Standart +</h2></div>
+        <div className="map-zone standart-zone"><h2>Standart</h2></div>
 
-        {/* ==================================================
-            КОМПЬЮТЕРЫ
-        ================================================== */}
+        {/* Компьютеры */}
         {computers.map((pc) => (
           <button
             key={pc.id}
-            className={`
-              computer
-              ${selected === pc.id ? "selected" : ""}
-              ${isComputerBusy(pc.id) ? "booked" : ""}
-            `}
-            style={{
-              left: `${pc.x}%`,
-              top: `${pc.y}%`,
-            }}
+            className={`computer ${selected === pc.id ? "selected" : ""} ${isComputerBusy(pc.id) ? "booked" : ""}`}
+            style={{ left: `${pc.x}%`, top: `${pc.y}%` }}
             onClick={() => handleComputerClick(pc.id)}
           >
             {pc.id}
           </button>
         ))}
 
-        {/* ==================================================
-            МОДАЛКА БРОНИРОВАНИЯ
-        ================================================== */}
+        {/* Модалка бронирования */}
         {bookingOpen && selectedComputer && (
           <div className="booking-overlay" onClick={closeBookingModal}>
             <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
-              <button className="booking-close" onClick={closeBookingModal}>
-                ×
-              </button>
+              <button className="booking-close" onClick={closeBookingModal}>×</button>
               <h2>Бронирование</h2>
               <div className="booking-pc">
                 <span>ПК №{selectedComputer.id}</span>
@@ -530,20 +478,12 @@ function handleComputerClick(id: number) {
 
               <label>
                 Имя клиента
-                <input
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Введите имя"
-                />
+                <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Введите имя" />
               </label>
 
               <label>
                 Телефон
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+7 999 999 99 99"
-                />
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 999 999 99 99" />
               </label>
 
               <label>
@@ -578,12 +518,7 @@ function handleComputerClick(id: number) {
                 <select
                   value={packageType}
                   onChange={(e) => {
-                    const value = e.target.value as
-                      | "hourly"
-                      | "morning"
-                      | "day"
-                      | "night"
-                      | "daily";
+                    const value = e.target.value as "hourly" | "morning" | "day" | "night" | "daily";
                     setPackageType(value);
                     if (value === "morning") {
                       setTime("08:00");
@@ -596,6 +531,7 @@ function handleComputerClick(id: number) {
                       setDuration(10);
                     } else if (value === "daily") {
                       setDuration(24);
+                      setTime("00:00"); // добавил для суток
                     } else if (value === "hourly") {
                       setDuration(1);
                     }
@@ -611,11 +547,7 @@ function handleComputerClick(id: number) {
 
               <label>
                 Длительность
-                <select
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
-                  // Ограничиваем доступные варианты в зависимости от типа
-                >
+                <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
                   {packageType === "hourly" ? (
                     <>
                       <option value={1}>1 час</option>
@@ -625,9 +557,6 @@ function handleComputerClick(id: number) {
                   ) : packageType === "daily" ? (
                     <option value={24}>24 часа</option>
                   ) : (
-                    // Для пакетов длительность фиксирована, но селект всё равно доступен,
-                    // поэтому показываем только те варианты, которые соответствуют пакету
-                    // (но можно просто задизейблить)
                     <>
                       {packageType === "morning" && <option value={5}>5 часов</option>}
                       {packageType === "day" && <option value={9}>9 часов</option>}
@@ -639,28 +568,19 @@ function handleComputerClick(id: number) {
 
               <div className="booking-price">
                 <span>Стоимость</span>
-                <strong>
-                  {/* Исправлено: добавлен packageType */}
-                  {calculatePrice(selectedComputer.zone, date, time, duration, packageType)} ₽
-                </strong>
+                <strong>{calculatePrice(selectedComputer.zone, date, time, duration, packageType)} ₽</strong>
               </div>
 
-              <button className="booking-submit" onClick={createBooking}>
-                Забронировать
-              </button>
+              <button className="booking-submit" onClick={createBooking}>Забронировать</button>
             </div>
           </div>
         )}
 
-        {/* ==================================================
-            МОИ БРОНИ
-        ================================================== */}
+        {/* Модалка "Мои брони" */}
         {myBookingsOpen && (
           <div className="booking-overlay" onClick={() => setMyBookingsOpen(false)}>
             <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
-              <button className="booking-close" onClick={() => setMyBookingsOpen(false)}>
-                ×
-              </button>
+              <button className="booking-close" onClick={() => setMyBookingsOpen(false)}>×</button>
               <h2>Мои брони</h2>
               {bookings.length === 0 ? (
                 <p>Броней пока нет</p>
@@ -674,9 +594,7 @@ function handleComputerClick(id: number) {
                     <p>Клиент: {booking.clientName}</p>
                     <p>Телефон: {booking.phone}</p>
                     <strong>{booking.price} ₽</strong>
-                    <button className="cancel-booking" onClick={() => cancelBooking(booking.id)}>
-                      Отменить
-                    </button>
+                    <button className="cancel-booking" onClick={() => cancelBooking(booking.id)}>Отменить</button>
                   </div>
                 ))
               )}
