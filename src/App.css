@@ -1,0 +1,921 @@
+/* ==================================================
+   K2 GAMING CLUB — APP.CSS
+   Dark / Neon Gaming UI
+   ================================================== */
+
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #f5f7ff;
+  background: #070912;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(102, 55, 255, 0.22), transparent 28%),
+    radial-gradient(circle at 85% 15%, rgba(0, 220, 255, 0.13), transparent 25%),
+    radial-gradient(circle at 50% 100%, rgba(255, 0, 128, 0.10), transparent 35%),
+    #070912;
+}
+
+/* ==================================================
+   APP
+   ================================================== */
+
+.app {
+  min-height: 100vh;
+  position: relative;
+  padding: 28px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 90%);
+}
+
+.app::after {
+  content: "";
+  position: fixed;
+  width: 520px;
+  height: 520px;
+  left: -180px;
+  bottom: -260px;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgba(123, 66, 255, 0.16);
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+/* ==================================================
+   HEADER
+   ================================================== */
+
+.header {
+  position: relative;
+  z-index: 5;
+  width: min(1450px, 100%);
+  margin: 0 auto 22px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 22px;
+  background: linear-gradient(
+    135deg,
+    rgba(19, 22, 38, 0.94),
+    rgba(10, 12, 24, 0.88)
+  );
+  box-shadow:
+    0 18px 55px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 38px);
+  line-height: 1;
+  letter-spacing: -1px;
+  background: linear-gradient(90deg, #ffffff, #b9a8ff 45%, #6de7ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.header p {
+  margin: 0;
+  color: #8f96ad;
+  font-size: 14px;
+  flex: 1;
+}
+
+.my-bookings-btn {
+  border: 1px solid rgba(139, 105, 255, 0.55);
+  border-radius: 12px;
+  padding: 12px 18px;
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    rgba(113, 67, 255, 0.95),
+    rgba(71, 103, 255, 0.95)
+  );
+  box-shadow:
+    0 8px 25px rgba(87, 66, 255, 0.28),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.my-bookings-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 32px rgba(87, 66, 255, 0.42),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.my-bookings-btn:active {
+  transform: translateY(0);
+}
+
+/* ==================================================
+   MAP
+   ================================================== */
+
+.club-map {
+  position: relative;
+  width: min(1450px, 100%);
+  min-height: min(76vh, 880px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(114, 65, 255, 0.10), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(0, 217, 255, 0.07), transparent 28%),
+    linear-gradient(145deg, #111425, #090b14 72%);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.50),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* subtle floor */
+.club-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+/* ==================================================
+   ZONES
+   ================================================== */
+
+.map-zone {
+  position: absolute;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.025);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.035),
+    0 10px 30px rgba(0,0,0,0.18);
+  pointer-events: none;
+}
+
+.map-zone h2 {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: rgba(255,255,255,0.42);
+}
+
+.PREMIUM-zone {
+  left: 3%;
+  top: 5%;
+  width: 44%;
+  height: 38%;
+  border-color: rgba(164, 96, 255, 0.20);
+  background: linear-gradient(
+    145deg,
+    rgba(118, 55, 255, 0.08),
+    rgba(255,255,255,0.018)
+  );
+}
+
+.bootcamp-zone {
+  left: 55%;
+  top: 5%;
+  width: 42%;
+  height: 38%;
+  border-color: rgba(0, 214, 255, 0.18);
+  background: linear-gradient(
+    145deg,
+    rgba(0, 196, 255, 0.065),
+    rgba(255,255,255,0.018)
+  );
+}
+
+.standart-plus-zone {
+  left: 33%;
+  top: 48%;
+  width: 64%;
+  height: 24%;
+  border-color: rgba(255, 93, 190, 0.15);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 52, 169, 0.045),
+    rgba(255,255,255,0.018)
+  );
+}
+
+.standart-zone {
+  left: 33%;
+  top: 75%;
+  width: 64%;
+  height: 21%;
+  border-color: rgba(108, 255, 177, 0.12);
+  background: linear-gradient(
+    145deg,
+    rgba(59, 220, 137, 0.04),
+    rgba(255,255,255,0.015)
+  );
+}
+
+/* ==================================================
+   MAP LABELS
+   ================================================== */
+
+.map-food,
+.map-reception,
+.map-wc {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.035);
+  color: rgba(255,255,255,0.38);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  pointer-events: none;
+}
+
+.map-food {
+  left: 3%;
+  bottom: 6%;
+  width: 25%;
+  height: 11%;
+}
+
+.map-reception {
+  left: 3%;
+  bottom: 20%;
+  width: 25%;
+  height: 8%;
+}
+
+.map-wc {
+  left: 3%;
+  bottom: 31%;
+  width: 12%;
+  height: 7%;
+}
+
+/* ==================================================
+   COMPUTERS
+   ================================================== */
+
+.computer {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(52px, 5vw, 72px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(151, 126, 255, 0.55);
+  border-radius: 16px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(132, 94, 255, 0.36), transparent 35%),
+    linear-gradient(145deg, #27233f, #111323);
+  box-shadow:
+    0 8px 22px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 0 0 1px rgba(102,74,255,0.06);
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+  z-index: 2;
+}
+
+.computer::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  top: 8px;
+  right: 9px;
+  border-radius: 50%;
+  background: #55f59a;
+  box-shadow: 0 0 10px rgba(85,245,154,0.9);
+}
+
+.computer:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  border-color: rgba(124, 231, 255, 0.85);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,0.45),
+    0 0 25px rgba(90, 125, 255, 0.28),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+}
+
+.computer.selected {
+  border-color: #72ddff;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(0, 222, 255, 0.45), transparent 38%),
+    linear-gradient(145deg, #163c4a, #111a28);
+  box-shadow:
+    0 0 0 3px rgba(77, 216, 255, 0.13),
+    0 0 32px rgba(45, 205, 255, 0.45);
+}
+
+.computer.selected::after {
+  background: #72ddff;
+  box-shadow: 0 0 12px #72ddff;
+}
+
+.computer.booked {
+  border-color: rgba(255, 78, 112, 0.7);
+  background:
+    radial-gradient(circle at 50% 32%, rgba(255, 61, 91, 0.25), transparent 38%),
+    linear-gradient(145deg, #3a1825, #17101a);
+  color: #ffb5c1;
+}
+
+.computer.booked::after {
+  background: #ff4e6e;
+  box-shadow: 0 0 11px rgba(255, 78, 110, 0.9);
+}
+
+.computer.booked:hover {
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+/* ==================================================
+   MODALS
+   ================================================== */
+
+.booking-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 3, 9, 0.76);
+  backdrop-filter: blur(12px);
+  animation: overlayIn 0.18s ease;
+}
+
+.booking-modal {
+  position: relative;
+  width: min(470px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 30px;
+  border: 1px solid rgba(255,255,255,0.11);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(109, 75, 255, 0.15), transparent 35%),
+    linear-gradient(145deg, #171a2b, #0d0f1b);
+  box-shadow:
+    0 35px 100px rgba(0,0,0,0.65),
+    0 0 50px rgba(84, 65, 255, 0.10),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  animation: modalIn 0.22s ease;
+}
+
+.booking-modal h2 {
+  margin: 0 0 20px;
+  font-size: 25px;
+}
+
+.booking-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 11px;
+  color: #aab0c2;
+  background: rgba(255,255,255,0.04);
+  font-size: 24px;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.booking-close:hover {
+  color: #fff;
+  background: rgba(255, 67, 98, 0.15);
+  border-color: rgba(255, 67, 98, 0.35);
+}
+
+.booking-pc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.booking-pc span {
+  font-weight: 800;
+}
+
+.booking-pc small {
+  color: #9c8cff;
+  font-weight: 700;
+}
+
+/* ==================================================
+   FORM
+   ================================================== */
+
+.booking-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0;
+  color: #aeb4c7;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.booking-modal input,
+.booking-modal select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px;
+  outline: none;
+  color: #f5f7ff;
+  background: rgba(4, 6, 14, 0.72);
+  font: inherit;
+  transition: 0.18s ease;
+}
+
+.booking-modal input::placeholder {
+  color: #555c70;
+}
+
+.booking-modal input:focus,
+.booking-modal select:focus {
+  border-color: rgba(107, 214, 255, 0.75);
+  box-shadow:
+    0 0 0 3px rgba(72, 208, 255, 0.09),
+    0 0 20px rgba(72, 208, 255, 0.08);
+}
+
+.booking-modal select option {
+  color: #fff;
+  background: #121522;
+}
+
+/* ==================================================
+   PRICE
+   ================================================== */
+
+.booking-price {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 0 16px;
+  padding: 17px;
+  border: 1px solid rgba(122, 91, 255, 0.20);
+  border-radius: 15px;
+  background: rgba(91, 64, 255, 0.07);
+}
+
+.booking-price span {
+  color: #969db3;
+}
+
+.booking-price strong {
+  color: #8be6ff;
+  font-size: 22px;
+}
+
+/* ==================================================
+   BUTTONS
+   ================================================== */
+
+.booking-submit {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid rgba(118, 232, 255, 0.28);
+  border-radius: 13px;
+  color: #071017;
+  background: linear-gradient(135deg, #78e7ff, #8d9cff);
+  box-shadow:
+    0 12px 30px rgba(78, 186, 255, 0.20),
+    inset 0 1px 0 rgba(255,255,255,0.55);
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.booking-submit:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 38px rgba(78, 186, 255, 0.32),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.booking-submit:active {
+  transform: translateY(0);
+}
+
+/* ==================================================
+   MY BOOKINGS
+   ================================================== */
+
+.my-booking-card {
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.035);
+}
+
+.my-booking-card h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.my-booking-card p {
+  margin: 7px 0;
+  color: #9ea5b8;
+  font-size: 13px;
+}
+
+.my-booking-card strong {
+  display: block;
+  margin-top: 12px;
+  color: #82e8ff;
+  font-size: 18px;
+}
+
+.cancel-booking {
+  width: 100%;
+  margin-top: 14px;
+  min-height: 42px;
+  border: 1px solid rgba(255, 74, 104, 0.25);
+  border-radius: 10px;
+  color: #ff9cac;
+  background: rgba(255, 61, 91, 0.07);
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.cancel-booking:hover {
+  background: rgba(255, 61, 91, 0.15);
+  border-color: rgba(255, 74, 104, 0.5);
+}
+
+/* ==================================================
+   SCROLLBAR
+   ================================================== */
+
+.booking-modal::-webkit-scrollbar {
+  width: 7px;
+}
+
+.booking-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.booking-modal::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: rgba(255,255,255,0.12);
+}
+
+/* ==================================================
+   ANIMATIONS
+   ================================================== */
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==================================================
+   ADAPTIVE
+   ================================================== */
+
+@media (max-width: 900px) {
+  .app {
+    padding: 14px;
+  }
+
+  .header {
+    padding: 18px;
+    border-radius: 18px;
+    flex-wrap: wrap;
+  }
+
+  .header p {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .club-map {
+    min-height: 700px;
+    border-radius: 20px;
+  }
+
+  .computer {
+    width: 48px;
+    border-radius: 13px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header h1 {
+    font-size: 25px;
+  }
+
+  .my-bookings-btn {
+    width: 100%;
+  }
+
+  .club-map {
+    min-height: 620px;
+  }
+
+  .map-zone h2 {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .booking-modal {
+    padding: 24px 18px;
+    border-radius: 20px;
+  }
+}
+
+/* ==================================================
+   K2 RED GAMING SKIN
+   Геометрия карты НЕ меняется.
+   ================================================== */
+
+:root {
+  --k2-red: #ff334d;
+  --k2-red-bright: #ff5267;
+  --k2-red-dark: #7f1425;
+}
+
+body {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255,35,55,.16), transparent 30%),
+    radial-gradient(circle at 85% 20%, rgba(180,20,40,.12), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(255,0,35,.10), transparent 36%),
+    #07080d;
+}
+
+.app::after {
+  background: rgba(255,35,55,.14);
+}
+
+.header {
+  border-color: rgba(255,55,75,.22);
+  background: linear-gradient(135deg, rgba(35,12,18,.96), rgba(12,10,15,.94));
+  box-shadow:
+    0 18px 55px rgba(0,0,0,.48),
+    0 0 35px rgba(255,30,55,.07),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.header h1 {
+  background: linear-gradient(90deg, #fff, #ffb0b8 42%, #ff334d);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.club-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: auto;
+  margin-right: 4px;
+  color: rgba(255,220,224,.78);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.club-contacts div:first-child {
+  color: rgba(255,238,240,.88);
+}
+
+.club-contacts div:last-child {
+  color: #ff6575;
+  font-weight: 700;
+}
+
+.my-bookings-btn,
+.booking-submit {
+  border-color: rgba(255,70,90,.48) !important;
+  background: linear-gradient(135deg,#e52a42,#851526) !important;
+  box-shadow:
+    0 8px 25px rgba(150,20,40,.28),
+    0 0 18px rgba(255,45,65,.12),
+    inset 0 1px 0 rgba(255,255,255,.16) !important;
+}
+
+.my-bookings-btn:hover,
+.booking-submit:hover {
+  filter: brightness(1.12);
+  box-shadow:
+    0 10px 32px rgba(210,25,50,.38),
+    0 0 24px rgba(255,45,65,.22) !important;
+}
+
+.club-map {
+  border-color: rgba(255,55,75,.18);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,35,55,.10), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(180,20,40,.07), transparent 28%),
+    linear-gradient(145deg,#151016,#090b10 72%);
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.55),
+    0 0 55px rgba(255,25,50,.06),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.club-map::before {
+  background:
+    linear-gradient(rgba(255,60,75,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,60,75,.022) 1px,transparent 1px);
+  background-size: 34px 34px;
+}
+
+.PREMIUM-zone {
+  border-color: rgba(255,70,90,.30) !important;
+  background: linear-gradient(145deg,rgba(255,35,55,.10),rgba(255,255,255,.018)) !important;
+}
+
+.bootcamp-zone {
+  border-color: rgba(255,80,95,.25) !important;
+  background: linear-gradient(145deg,rgba(210,25,50,.075),rgba(255,255,255,.018)) !important;
+}
+
+.standart-plus-zone {
+  border-color: rgba(255,55,80,.26) !important;
+  background: linear-gradient(145deg,rgba(255,30,65,.075),rgba(255,255,255,.018)) !important;
+}
+
+.standart-zone {
+  border-color: rgba(255,90,105,.20) !important;
+  background: linear-gradient(145deg,rgba(180,25,45,.055),rgba(255,255,255,.015)) !important;
+}
+
+.map-zone h2 {
+  color: rgba(255,185,192,.58);
+  text-shadow: 0 0 14px rgba(255,45,65,.24);
+}
+
+.map-food,
+.map-reception,
+.map-wc {
+  border-color: rgba(255,65,85,.13) !important;
+  background: rgba(255,40,60,.035) !important;
+  color: rgba(255,190,198,.48) !important;
+}
+
+.computer {
+  border-color: rgba(255,70,90,.58) !important;
+  background:
+    radial-gradient(circle at 50% 32%,rgba(255,45,70,.34),transparent 35%),
+    linear-gradient(145deg,#3a1720,#121116) !important;
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.40),
+    0 0 12px rgba(255,35,60,.10),
+    inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+.computer:hover {
+  box-shadow:
+    0 0 22px rgba(255,45,65,.45),
+    0 7px 20px rgba(0,0,0,.5) !important;
+}
+
+.computer.selected {
+  border-color: #ff5267 !important;
+  background:
+    radial-gradient(circle at 50% 32%,rgba(255,80,100,.45),transparent 36%),
+    linear-gradient(145deg,#8d2033,#34131b) !important;
+  box-shadow:
+    0 0 0 2px rgba(255,82,103,.18),
+    0 0 30px rgba(255,45,65,.68),
+    inset 0 0 18px rgba(255,70,90,.20) !important;
+}
+
+.computer.booked {
+  border-color: rgba(255,120,130,.65) !important;
+  background: linear-gradient(145deg,#5e1723,#250b11) !important;
+}
+
+.booking-overlay {
+  background: rgba(5,2,5,.76) !important;
+}
+
+.booking-modal {
+  background: linear-gradient(145deg,rgba(34,15,20,.98),rgba(12,10,14,.99)) !important;
+  border-color: rgba(255,65,85,.18) !important;
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.68),
+    0 0 55px rgba(255,35,55,.12) !important;
+}
+
+.booking-modal input,
+.booking-modal select {
+  border-color: rgba(255,65,85,.16) !important;
+  background: rgba(255,40,60,.045) !important;
+}
+
+.booking-modal input:focus,
+.booking-modal select:focus {
+  border-color: rgba(255,75,95,.65) !important;
+  box-shadow: 0 0 0 3px rgba(255,50,70,.12) !important;
+}
+
+.booking-price {
+  background: rgba(255,40,60,.07) !important;
+  border-color: rgba(255,70,90,.20) !important;
+}
+
+.my-booking-card {
+  background: rgba(255,40,60,.045) !important;
+  border-color: rgba(255,65,85,.12) !important;
+}
+/* =========================================================
+   ЦЕНТРИРОВАНИЕ НИЖНИХ ЗОН
+   Геометрию ПК НЕ меняем
+   ========================================================= */
+
+.standart-plus-zone {
+  left: 16% !important;
+  width: 66% !important;
+}
+
+.standart-zone {
+  left: 16% !important;
+  width: 66% !important;
+}
