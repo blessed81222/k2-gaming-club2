@@ -23,12 +23,11 @@ type Booking = {
   duration: number;
   price: number;
   packageType: "hourly" | "morning" | "day" | "night" | "daily";
+vkUserId: string | null;
 };
 
 const computers: Computer[] = [
-  // =========================
   // VIP
-  // =========================
   { id: 3, zone: "PREMIUM", x: 9, y: 15 },
   { id: 4, zone: "PREMIUM", x: 19, y: 15 },
   { id: 5, zone: "PREMIUM", x: 29, y: 15 },
@@ -36,18 +35,14 @@ const computers: Computer[] = [
   { id: 1, zone: "PREMIUM", x: 19, y: 35 },
   { id: 2, zone: "PREMIUM", x: 9, y: 35 },
 
-  // =========================
   // BOOT CAMP
-  // =========================
   { id: 7, zone: "Boot Camp", x: 60, y: 15 },
   { id: 8, zone: "Boot Camp", x: 75, y: 15 },
   { id: 9, zone: "Boot Camp", x: 91, y: 15 },
   { id: 10, zone: "Boot Camp", x: 91, y: 35 },
   { id: 11, zone: "Boot Camp", x: 75, y: 35 },
 
-  // =========================
   // STANDART +
-  // =========================
   { id: 12, zone: "Standart +", x: 59, y: 54 },
   { id: 13, zone: "Standart +", x: 70, y: 54 },
   { id: 14, zone: "Standart +", x: 70, y: 66 },
@@ -55,9 +50,7 @@ const computers: Computer[] = [
   { id: 16, zone: "Standart +", x: 30, y: 66 },
   { id: 17, zone: "Standart +", x: 30, y: 54 },
 
-  // =========================
   // STANDART
-  // =========================
   { id: 18, zone: "Standart", x: 59, y: 80 },
   { id: 19, zone: "Standart", x: 70, y: 80 },
   { id: 20, zone: "Standart", x: 70, y: 91 },
@@ -89,7 +82,6 @@ const prices = {
       daily: { weekday: 1400, weekend: 1500 },
     },
   },
-
   "Standart +": {
     hourly: {
       day: {
@@ -110,7 +102,6 @@ const prices = {
       daily: { weekday: 1500, weekend: 1600 },
     },
   },
-
   "Boot Camp": {
     hourly: {
       day: {
@@ -131,7 +122,6 @@ const prices = {
       daily: { weekday: 1800, weekend: 2000 },
     },
   },
-
   PREMIUM: {
     hourly: {
       day: {
@@ -154,7 +144,7 @@ const prices = {
   },
 };
 
-const STORAGE_KEY = "k2_my_bookings";
+const VK_USER_STORAGE_KEY = "k2_vk_user";
 
 function getToday(): string {
   const now = new Date();
@@ -199,14 +189,12 @@ function calculatePrice(
   return zonePrices.packages[packageType][weekendKey];
 }
 
-function loadMyBookings(): Booking[] {
+function loadStoredVkUser(): K2User | null {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return [];
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
+    const saved = localStorage.getItem(VK_USER_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : null;
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -214,12 +202,12 @@ function App() {
   const today = getToday();
 
   const [vkConfigured, setVkConfigured] = useState(false);
-  const [vkUser, setVkUser] = useState<K2User | null>(null);
+  const [vkUser, setVkUser] = useState<K2User | null>(() => loadStoredVkUser());
   const [vkLoading, setVkLoading] = useState(false);
   const [vkError, setVkError] = useState("");
 
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [myBookings, setMyBookings] = useState<Booking[]>(loadMyBookings);
+  const [myBookings, setMyBookings] = useState<Booking[]>([]);
   const [, setBookingsLoading] = useState(true);
   const [bookingsError, setBookingsError] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
@@ -235,6 +223,7 @@ function App() {
 
   const selectedComputer = computers.find((pc) => pc.id === selected);
 
+  // Загрузка конфигурации VK
   useEffect(() => {
     let cancelled = false;
 
@@ -257,6 +246,7 @@ function App() {
     };
   }, []);
 
+  // Обработка VK callback
   useEffect(() => {
     const callback = getVkCallbackParams();
     if (!callback) return;
@@ -286,6 +276,7 @@ function App() {
       })
       .then((data) => {
         setVkUser(data.user);
+        localStorage.setItem(VK_USER_STORAGE_KEY, JSON.stringify(data.user));
         clearStoredVkMeta();
         window.history.replaceState({}, document.title, window.location.pathname);
       })
@@ -293,9 +284,12 @@ function App() {
         console.error("VK exchange error:", error);
         setVkError(error instanceof Error ? error.message : "Ошибка VK авторизации");
       })
-      .finally(() => setVkLoading(false));
+      .finally(() => {
+        setVkLoading(false);
+      });
   }, []);
 
+  // Загрузка общих броней
   useEffect(() => {
     let cancelled = false;
 
@@ -328,9 +322,48 @@ function App() {
     };
   }, [date]);
 
+
+useEffect(() => {
+  if (!vkUser) return;
+
+  try {
+    localStorage.setItem(
+      VK_USER_STORAGE_KEY,
+      JSON.stringify(vkUser)
+    );
+  } catch (error) {
+    console.error(
+      "Не удалось сохранить VK пользователя:",
+      error
+    );
+  }
+}, [vkUser]);
+
+  // Загрузка моих броней с сервера
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(myBookings));
-  }, [myBookings]);
+    if (!vkUser?.vkUserId) {
+      setMyBookings([]);
+      return;
+    }
+
+    async function fetchMyBookings() {
+      try {
+        const response = await fetch(
+          `/api/bookings?mine=true&vkUserId=${encodeURIComponent(vkUser!.vkUserId)}`
+        );
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Не удалось загрузить мои брони");
+        }
+        setMyBookings(data.bookings || []);
+      } catch (error) {
+        console.error("My bookings error:", error);
+        setMyBookings([]);
+      }
+    }
+
+    fetchMyBookings();
+  }, [vkUser?.vkUserId]);
 
   function isComputerBusy(computerId: number): boolean {
     const startNew = createLocalDate(date, time);
@@ -460,7 +493,14 @@ function App() {
 
   async function cancelBooking(id: string) {
     try {
-      const response = await fetch(`/api/bookings/${encodeURIComponent(id)}`, { method: "DELETE" });
+      const response = await fetch(
+  `/api/bookings/${encodeURIComponent(id)}?vkUserId=${encodeURIComponent(
+    vkUser?.vkUserId || ""
+  )}`,
+  {
+    method: "DELETE",
+  }
+);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Не удалось отменить бронь");
 
