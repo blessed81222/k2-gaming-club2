@@ -189,11 +189,34 @@ function calculatePrice(
   return zonePrices.packages[packageType][weekendKey];
 }
 
+function normalizeVkUser(user: any): K2User | null {
+  if (!user) return null;
+
+  const rawId =
+    user.vkUserId ??
+    user.id ??
+    user.userId ??
+    user.sub;
+
+  if (!rawId) {
+    console.warn("VK user has no id:", user);
+    return null;
+  }
+
+  return {
+    ...user,
+    vkUserId: String(rawId),
+  } as K2User;
+}
+
 function loadStoredVkUser(): K2User | null {
   try {
     const saved = localStorage.getItem(VK_USER_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  } catch {
+    if (!saved) return null;
+
+    return normalizeVkUser(JSON.parse(saved));
+  } catch (error) {
+    console.error("Ошибка загрузки VK пользователя:", error);
     return null;
   }
 }
@@ -275,11 +298,27 @@ function App() {
         return data;
       })
       .then((data) => {
-        setVkUser(data.user);
-        localStorage.setItem(VK_USER_STORAGE_KEY, JSON.stringify(data.user));
-        clearStoredVkMeta();
-        window.history.replaceState({}, document.title, window.location.pathname);
-      })
+  const user = normalizeVkUser(data.user);
+
+  if (!user) {
+    throw new Error("VK не вернул идентификатор пользователя");
+  }
+
+  setVkUser(user);
+
+  localStorage.setItem(
+    VK_USER_STORAGE_KEY,
+    JSON.stringify(user)
+  );
+
+  clearStoredVkMeta();
+
+  window.history.replaceState(
+    {},
+    document.title,
+    window.location.pathname
+  );
+})
       .catch((error) => {
         console.error("VK exchange error:", error);
         setVkError(error instanceof Error ? error.message : "Ошибка VK авторизации");
@@ -296,7 +335,12 @@ function App() {
     async function loadSharedBookings() {
       try {
         setBookingsLoading(true);
-        const response = await fetch(`/api/bookings?date=${encodeURIComponent(date)}`);
+        const response = await fetch(
+  `/api/bookings?date=${encodeURIComponent(date)}&_=${Date.now()}`,
+  {
+    cache: "no-store",
+  }
+);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Не удалось загрузить брони");
         if (!cancelled) {
