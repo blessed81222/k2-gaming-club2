@@ -220,7 +220,7 @@ function App() {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [myBookings, setMyBookings] = useState<Booking[]>(loadMyBookings);
-  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [, setBookingsLoading] = useState(true);
   const [bookingsError, setBookingsError] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
