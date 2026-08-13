@@ -47,7 +47,6 @@ const computers: Computer[] = [
 
   // =========================
   // STANDART +
-  // Сдвинуты немного влево
   // =========================
   { id: 12, zone: "Standart +", x: 59, y: 54 },
   { id: 13, zone: "Standart +", x: 70, y: 54 },
@@ -58,7 +57,6 @@ const computers: Computer[] = [
 
   // =========================
   // STANDART
-  // Сдвинуты немного влево
   // =========================
   { id: 18, zone: "Standart", x: 59, y: 80 },
   { id: 19, zone: "Standart", x: 70, y: 80 },
@@ -156,7 +154,7 @@ const prices = {
   },
 };
 
-const STORAGE_KEY = "k2_bookings";
+const STORAGE_KEY = "k2_my_bookings";
 
 function getToday(): string {
   const now = new Date();
@@ -175,53 +173,39 @@ function isWeekend(date: string): boolean {
   return weekday === 0 || weekday === 6;
 }
 
+function formatTime(date: Date): string {
+  return date.toTimeString().slice(0, 5);
+}
+
 function calculatePrice(
-  zone: Zone,
+  zone: string,
   date: string,
   time: string,
   duration: number,
-  packageType: "hourly" | "morning" | "day" | "night" | "daily"
+  packageType: Booking["packageType"]
 ): number {
-  const type = isWeekend(date) ? "weekend" : "weekday";
-  const zonePrice = prices[zone];
+  const zonePrices = prices[zone as keyof typeof prices];
+  if (!zonePrices) return 0;
 
-  if (packageType !== "hourly") {
-    return zonePrice.packages[packageType][type];
+  const weekendKey = isWeekend(date) ? "weekend" : "weekday";
+
+  if (packageType === "hourly") {
+    const hour = Number(time.split(":")[0]);
+    const period = hour >= 8 && hour < 22 ? "day" : "night";
+    const durationKey = duration === 1 ? "one" : duration === 3 ? "three" : "five";
+    return zonePrices.hourly[period][durationKey][weekendKey];
   }
 
-  let period: "day" | "night";
-  let durationKey: "one" | "three" | "five";
-
-  if (duration === 1) {
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 17 ? "day" : "night";
-    durationKey = "one";
-  } else if (duration === 3) {
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 16 ? "day" : "night";
-    durationKey = "three";
-  } else if (duration === 5) {
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 14 ? "day" : "night";
-    durationKey = "five";
-  } else {
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 14 ? "day" : "night";
-    const basePrice = zonePrice.hourly[period]["five"][type];
-    return Math.round((basePrice / 5) * duration);
-  }
-
-  return zonePrice.hourly[period][durationKey][type];
+  return zonePrices.packages[packageType][weekendKey];
 }
 
-function loadBookings(): Booking[] {
+function loadMyBookings(): Booking[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return [];
     const parsed = JSON.parse(saved);
     return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.error("Ошибка загрузки броней:", error);
+  } catch {
     return [];
   }
 }
@@ -229,15 +213,15 @@ function loadBookings(): Booking[] {
 function App() {
   const today = getToday();
 
-  // ==================================================
-  // ВСЕ СОСТОЯНИЯ ВЫНЕСЕНЫ НАВЕРХ
-  // ==================================================
   const [vkConfigured, setVkConfigured] = useState(false);
   const [vkUser, setVkUser] = useState<K2User | null>(null);
   const [vkLoading, setVkLoading] = useState(false);
   const [vkError, setVkError] = useState("");
 
-  const [bookings, setBookings] = useState<Booking[]>(loadBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [myBookings, setMyBookings] = useState<Booking[]>(loadMyBookings);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [bookingsError, setBookingsError] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [myBookingsOpen, setMyBookingsOpen] = useState(false);
@@ -247,15 +231,10 @@ function App() {
   const [date, setDate] = useState(today);
   const [time, setTime] = useState("18:00");
   const [duration, setDuration] = useState(1);
-  const [packageType, setPackageType] = useState<"hourly" | "morning" | "day" | "night" | "daily">("hourly");
+  const [packageType, setPackageType] = useState<Booking["packageType"]>("hourly");
 
   const selectedComputer = computers.find((pc) => pc.id === selected);
 
-  // ==================================================
-  // ЭФФЕКТЫ
-  // ==================================================
-
-  // ЗАГРУЗКА КОНФИГУРАЦИИ VK С БЕКЕНДА (единственная инициализация)
   useEffect(() => {
     let cancelled = false;
 
@@ -265,7 +244,7 @@ function App() {
         const data = await response.json();
         if (!cancelled && data.vkConfigured && data.vkAppId) {
           setVkConfigured(true);
-          initVkLogin(Number(data.vkAppId)); // эта функция сама вызывает VKID.Config.init
+          initVkLogin(Number(data.vkAppId));
         }
       } catch (error) {
         console.error("VK config error:", error);
@@ -278,7 +257,6 @@ function App() {
     };
   }, []);
 
-  // ОБРАБОТКА CALLBACK ПОСЛЕ ВОЗВРАТА ИЗ VK ID
   useEffect(() => {
     const callback = getVkCallbackParams();
     if (!callback) return;
@@ -318,14 +296,41 @@ function App() {
       .finally(() => setVkLoading(false));
   }, []);
 
-  // СОХРАНЕНИЕ БРОНЕЙ
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-  }, [bookings]);
+    let cancelled = false;
 
-  // ==================================================
-  // ЛОГИКА
-  // ==================================================
+    async function loadSharedBookings() {
+      try {
+        setBookingsLoading(true);
+        const response = await fetch(`/api/bookings?date=${encodeURIComponent(date)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Не удалось загрузить брони");
+        if (!cancelled) {
+          setBookings(data.bookings || []);
+          setBookingsError("");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Bookings load error:", error);
+          setBookingsError(error instanceof Error ? error.message : "Ошибка загрузки броней");
+        }
+      } finally {
+        if (!cancelled) setBookingsLoading(false);
+      }
+    }
+
+    loadSharedBookings();
+    const interval = window.setInterval(loadSharedBookings, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [date]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(myBookings));
+  }, [myBookings]);
 
   function isComputerBusy(computerId: number): boolean {
     const startNew = createLocalDate(date, time);
@@ -339,6 +344,31 @@ function App() {
     });
   }
 
+  function getBlockingBooking(computerId: number): Booking | null {
+    const startNew = createLocalDate(date, time);
+    const endNew = new Date(startNew.getTime() + duration * 60 * 60 * 1000);
+
+    return (
+      bookings.find((booking) => {
+        if (booking.computerId !== computerId) return false;
+        const startOld = createLocalDate(booking.date, booking.time);
+        const endOld = new Date(startOld.getTime() + booking.duration * 60 * 60 * 1000);
+        return startNew < endOld && endNew > startOld;
+      }) || null
+    );
+  }
+
+  function getBookingUntilLabel(computerId: number): string | null {
+    const booking = getBlockingBooking(computerId);
+    if (!booking) return null;
+
+    const end = new Date(
+      createLocalDate(booking.date, booking.time).getTime() + booking.duration * 60 * 60 * 1000
+    );
+
+    return `до ${formatTime(end)}`;
+  }
+
   function handleComputerClick(id: number) {
     setSelected(id);
     setBookingOpen(true);
@@ -349,7 +379,7 @@ function App() {
     setSelected(null);
   }
 
-  function createBooking() {
+  async function createBooking() {
     if (selected === null || !clientName.trim() || !phone.trim()) {
       alert("Заполни имя и телефон.");
       return;
@@ -394,22 +424,54 @@ function App() {
       packageType,
     };
 
-    setBookings((prev) => [...prev, newBooking]);
-    setBookingOpen(false);
-    setSelected(null);
-    setClientName("");
-    setPhone("");
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newBooking,
+          vkUserId: vkUser?.vkUserId || null,
+        }),
+      });
 
-    alert(`Бронь создана!\n\nПК №${computer.id}\nСтоимость: ${price} ₽`);
+      const data = await response.json();
+      if (response.status === 409) {
+        alert(data.error || "Этот ПК уже занят на выбранное время.");
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(data.error || "Не удалось создать бронь");
+      }
+
+      const savedBooking = data.booking as Booking;
+      setBookings((prev) => [...prev, savedBooking]);
+      setMyBookings((prev) => [...prev, savedBooking]);
+      setBookingOpen(false);
+      setSelected(null);
+      setClientName("");
+      setPhone("");
+
+      alert(`Бронь создана!\n\nПК №${computer.id}\nСтоимость: ${price} ₽`);
+    } catch (error) {
+      console.error("Create booking error:", error);
+      alert(error instanceof Error ? error.message : "Не удалось создать бронь");
+    }
   }
 
-  function cancelBooking(id: string) {
-    setBookings((prev) => prev.filter((item) => item.id !== id));
+  async function cancelBooking(id: string) {
+    try {
+      const response = await fetch(`/api/bookings/${encodeURIComponent(id)}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Не удалось отменить бронь");
+
+      setBookings((prev) => prev.filter((item) => item.id !== id));
+      setMyBookings((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("Cancel booking error:", error);
+      alert(error instanceof Error ? error.message : "Не удалось отменить бронь");
+    }
   }
 
-  // ==================================================
-  // RENDER
-  // ==================================================
   return (
     <div className="app">
       <header className="header">
@@ -442,30 +504,37 @@ function App() {
         {vkError && <div className="vk-error">{vkError}</div>}
 
         <button className="my-bookings-btn" onClick={() => setMyBookingsOpen(true)}>
-          Мои брони ({bookings.length})
+          Мои брони ({myBookings.length})
         </button>
       </header>
 
       <section className="club-map">
-        {/* Зоны */}
         <div className="map-zone PREMIUM-zone"><h2>PREMIUM</h2></div>
         <div className="map-zone bootcamp-zone"><h2>Boot Camp</h2></div>
         <div className="map-zone standart-plus-zone"><h2>Standart +</h2></div>
         <div className="map-zone standart-zone"><h2>Standart</h2></div>
 
-        {/* Компьютеры */}
-        {computers.map((pc) => (
-          <button
-            key={pc.id}
-            className={`computer ${selected === pc.id ? "selected" : ""} ${isComputerBusy(pc.id) ? "booked" : ""}`}
-            style={{ left: `${pc.x}%`, top: `${pc.y}%` }}
-            onClick={() => handleComputerClick(pc.id)}
-          >
-            {pc.id}
-          </button>
-        ))}
+        {bookingsError && (
+          <div className="bookings-sync-error">{bookingsError}</div>
+        )}
 
-        {/* Модалка бронирования */}
+        {computers.map((pc) => {
+          const bookingUntil = getBookingUntilLabel(pc.id);
+          return (
+            <button
+              key={pc.id}
+              className={`computer ${selected === pc.id ? "selected" : ""} ${isComputerBusy(pc.id) ? "booked" : ""}`}
+              style={{ left: `${pc.x}%`, top: `${pc.y}%` }}
+              onClick={() => handleComputerClick(pc.id)}
+            >
+              {pc.id}
+              {bookingUntil && (
+                <span className="computer-booking-until">{bookingUntil}</span>
+              )}
+            </button>
+          );
+        })}
+
         {bookingOpen && selectedComputer && (
           <div className="booking-overlay" onClick={closeBookingModal}>
             <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
@@ -518,7 +587,7 @@ function App() {
                 <select
                   value={packageType}
                   onChange={(e) => {
-                    const value = e.target.value as "hourly" | "morning" | "day" | "night" | "daily";
+                    const value = e.target.value as Booking["packageType"];
                     setPackageType(value);
                     if (value === "morning") {
                       setTime("08:00");
@@ -531,7 +600,7 @@ function App() {
                       setDuration(10);
                     } else if (value === "daily") {
                       setDuration(24);
-                      setTime("00:00"); // добавил для суток
+                      setTime("00:00");
                     } else if (value === "hourly") {
                       setDuration(1);
                     }
@@ -576,16 +645,15 @@ function App() {
           </div>
         )}
 
-        {/* Модалка "Мои брони" */}
         {myBookingsOpen && (
           <div className="booking-overlay" onClick={() => setMyBookingsOpen(false)}>
             <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
               <button className="booking-close" onClick={() => setMyBookingsOpen(false)}>×</button>
               <h2>Мои брони</h2>
-              {bookings.length === 0 ? (
+              {myBookings.length === 0 ? (
                 <p>Броней пока нет</p>
               ) : (
-                bookings.map((booking) => (
+                myBookings.map((booking) => (
                   <div key={booking.id} className="my-booking-card">
                     <h3>ПК №{booking.computerId}</h3>
                     <p>Дата: {booking.date}</p>

@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createBooking, deleteBooking, listBookings } from './bookings.mjs';
 
 const PORT = Number(process.env.API_PORT || 8787);
 const VK_ID_APP_ID = process.env.VK_ID_APP_ID || '';
@@ -85,6 +86,35 @@ const server = http.createServer(async (req, res) => {
         vkConfigured: Boolean(VK_ID_APP_ID),
         vkAppId: VK_ID_APP_ID || null,
       });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/bookings') {
+      const date = url.searchParams.get('date') || '';
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return sendJson(res, 400, { ok: false, error: 'Invalid date. Expected YYYY-MM-DD.' });
+      }
+      const bookings = await listBookings(date);
+      return sendJson(res, 200, { ok: true, bookings });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/bookings') {
+      try {
+        const body = await readJson(req);
+        const booking = await createBooking(body);
+        return sendJson(res, 201, { ok: true, booking });
+      } catch (error) {
+        if (error?.code === 'BOOKING_CONFLICT') {
+          return sendJson(res, 409, { ok: false, error: error.message, conflict: error.conflict });
+        }
+        throw error;
+      }
+    }
+
+    if (req.method === 'DELETE' && url.pathname.startsWith('/api/bookings/')) {
+      const id = decodeURIComponent(url.pathname.slice('/api/bookings/'.length));
+      if (!id) return sendJson(res, 400, { ok: false, error: 'Booking id is required' });
+      await deleteBooking(id);
+      return sendJson(res, 200, { ok: true });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/auth/vk/exchange') {

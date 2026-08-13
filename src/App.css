@@ -919,3 +919,24 @@ body {
   left: 16% !important;
   width: 66% !important;
 }
+/* ==================================================
+   SHARED BOOKING STATUS
+   ================================================== */
+.computer-booking-until {
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  transform: translateX(-50%);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .4px;
+  color: rgba(255, 190, 198, .9);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.computer.booked .computer-booking-until {
+  color: #ffb5c1;
+  text-shadow: 0 0 8px rgba(255, 78, 110, .45);
+}
