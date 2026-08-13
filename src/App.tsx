@@ -445,17 +445,18 @@ useEffect(() => {
     const price = calculatePrice(computer.zone, date, time, duration, packageType);
 
     const newBooking: Booking = {
-      id: crypto.randomUUID(),
-      computerId: selected,
-      zone: computer.zone,
-      clientName: clientName.trim(),
-      phone: phone.trim(),
-      date,
-      time,
-      duration,
-      price,
-      packageType,
-    };
+  id: crypto.randomUUID(),
+  computerId: selected,
+  zone: computer.zone,
+  clientName: clientName.trim(),
+  phone: phone.trim(),
+  date,
+  time,
+  duration,
+  price,
+  packageType,
+  vkUserId: vkUser?.vkUserId || null,
+};
 
     try {
       const response = await fetch("/api/bookings", {
