@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import { beginVkLogin, clearStoredVkMeta, getStoredVkMeta, getVkCallbackParams, getVkRedirectUri, initVkLogin } from "./auth/vk";
+import type { K2User } from "./auth/types";
 
 type Zone = "Standart" | "Standart +" | "Boot Camp" | "PREMIUM";
 
@@ -24,9 +26,7 @@ type Booking = {
 };
 
 const computers: Computer[] = [
-  // =========================
   // VIP
-  // =========================
   { id: 3, zone: "PREMIUM", x: 9, y: 15 },
   { id: 4, zone: "PREMIUM", x: 19, y: 15 },
   { id: 5, zone: "PREMIUM", x: 29, y: 15 },
@@ -34,19 +34,14 @@ const computers: Computer[] = [
   { id: 1, zone: "PREMIUM", x: 19, y: 35 },
   { id: 2, zone: "PREMIUM", x: 9, y: 35 },
 
-  // =========================
   // BOOT CAMP
-  // =========================
   { id: 7, zone: "Boot Camp", x: 60, y: 15 },
   { id: 8, zone: "Boot Camp", x: 75, y: 15 },
   { id: 9, zone: "Boot Camp", x: 91, y: 15 },
   { id: 10, zone: "Boot Camp", x: 91, y: 35 },
   { id: 11, zone: "Boot Camp", x: 75, y: 35 },
 
-  // =========================
   // STANDART +
-  // Сдвинуты немного влево
-  // =========================
   { id: 12, zone: "Standart +", x: 59, y: 54 },
   { id: 13, zone: "Standart +", x: 70, y: 54 },
   { id: 14, zone: "Standart +", x: 70, y: 66 },
@@ -54,10 +49,7 @@ const computers: Computer[] = [
   { id: 16, zone: "Standart +", x: 30, y: 66 },
   { id: 17, zone: "Standart +", x: 30, y: 54 },
 
-  // =========================
   // STANDART
-  // Сдвинуты немного влево
-  // =========================
   { id: 18, zone: "Standart", x: 59, y: 80 },
   { id: 19, zone: "Standart", x: 70, y: 80 },
   { id: 20, zone: "Standart", x: 70, y: 91 },
@@ -89,7 +81,6 @@ const prices = {
       daily: { weekday: 1400, weekend: 1500 },
     },
   },
-
   "Standart +": {
     hourly: {
       day: {
@@ -110,7 +101,6 @@ const prices = {
       daily: { weekday: 1500, weekend: 1600 },
     },
   },
-
   "Boot Camp": {
     hourly: {
       day: {
@@ -131,8 +121,6 @@ const prices = {
       daily: { weekday: 1800, weekend: 2000 },
     },
   },
-
-  // Исправлено: ключ теперь соответствует Zone ("PREMIUM")
   PREMIUM: {
     hourly: {
       day: {
@@ -155,7 +143,7 @@ const prices = {
   },
 };
 
-const STORAGE_KEY = "k2_bookings";
+const VK_USER_STORAGE_KEY = "k2_vk_user";
 
 function getToday(): string {
   const now = new Date();
@@ -174,97 +162,218 @@ function isWeekend(date: string): boolean {
   return weekday === 0 || weekday === 6;
 }
 
-// Исправлено: правильное объявление функции
+function formatTime(date: Date): string {
+  return date.toTimeString().slice(0, 5);
+}
+
 function calculatePrice(
-  zone: Zone,
+  zone: string,
   date: string,
   time: string,
   duration: number,
-  packageType: "hourly" | "morning" | "day" | "night" | "daily"
+  packageType: Booking["packageType"]
 ): number {
-  const type = isWeekend(date) ? "weekend" : "weekday";
-  const zonePrice = prices[zone];
+  const zonePrices = prices[zone as keyof typeof prices];
+  if (!zonePrices) return 0;
 
-  // =========================
-  // ПАКЕТЫ
-  // =========================
-  if (packageType !== "hourly") {
-    return zonePrice.packages[packageType][type];
+  const weekendKey = isWeekend(date) ? "weekend" : "weekday";
+
+  if (packageType === "hourly") {
+    const hour = Number(time.split(":")[0]);
+    const period = hour >= 8 && hour < 22 ? "day" : "night";
+    const durationKey = duration === 1 ? "one" : duration === 3 ? "three" : "five";
+    return zonePrices.hourly[period][durationKey][weekendKey];
   }
 
-  // =========================
-  // ПОЧАСОВЫЕ ТАРИФЫ
-  // =========================
-  let period: "day" | "night";
-  let durationKey: "one" | "three" | "five";
-
-  // Определяем период и ключ длительности
-  if (duration === 1) {
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 17 ? "day" : "night";
-    durationKey = "one";
-  } else if (duration === 3) {
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 16 ? "day" : "night";
-    durationKey = "three";
-  } else if (duration === 5) {
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 14 ? "day" : "night";
-    durationKey = "five";
-  } else {
-    // Если длительность не 1, 3 или 5 (например, 24), используем тариф за 5 часов и пересчитываем пропорционально
-    // Это защита от некорректного ввода; в идеале UI не должен позволять такие комбинации
-    const hour = Number(time.split(":")[0]);
-    period = hour >= 8 && hour < 14 ? "day" : "night";
-    const basePrice = zonePrice.hourly[period]["five"][type];
-    return Math.round((basePrice / 5) * duration);
-  }
-
-  return zonePrice.hourly[period][durationKey][type];
+  return zonePrices.packages[packageType][weekendKey];
 }
 
-function loadBookings(): Booking[] {
+function normalizeVkUser(user: any): K2User | null {
+  if (!user) return null;
+
+  const rawId = user.vkUserId ?? user.id ?? user.userId ?? user.sub;
+  if (!rawId) {
+    console.warn("VK user has no id:", user);
+    return null;
+  }
+
+  return {
+    ...user,
+    vkUserId: String(rawId),
+  } as K2User;
+}
+
+function loadStoredVkUser(): K2User | null {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return [];
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
+    const saved = localStorage.getItem(VK_USER_STORAGE_KEY);
+    if (!saved) return null;
+
+    return normalizeVkUser(JSON.parse(saved));
   } catch (error) {
-    console.error("Ошибка загрузки броней:", error);
-    return [];
+    console.error("Ошибка загрузки VK пользователя:", error);
+    return null;
   }
 }
 
 function App() {
   const today = getToday();
 
-  const [bookings, setBookings] = useState<Booking[]>(loadBookings);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [vkConfigured, setVkConfigured] = useState(false);
+  const [vkUser, setVkUser] = useState<K2User | null>(() => loadStoredVkUser());
+  const [vkLoading, setVkLoading] = useState(false);
+  const [vkError, setVkError] = useState("");
 
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [myBookings, setMyBookings] = useState<Booking[]>([]);
+  const [, setBookingsLoading] = useState(true);
+  const [bookingsError, setBookingsError] = useState("");
+  const [selected, setSelected] = useState<number | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [myBookingsOpen, setMyBookingsOpen] = useState(false);
 
   const [clientName, setClientName] = useState("");
   const [phone, setPhone] = useState("");
-
   const [date, setDate] = useState(today);
   const [time, setTime] = useState("18:00");
   const [duration, setDuration] = useState(1);
-  const [packageType, setPackageType] = useState<
-    "hourly" | "morning" | "day" | "night" | "daily"
-  >("hourly");
+  const [packageType, setPackageType] = useState<Booking["packageType"]>("hourly");
 
-const selectedComputer = computers.find((pc) => pc.id === selected);
-  // ==================================================
-  // СОХРАНЕНИЕ БРОНЕЙ
-  // ==================================================
+  const selectedComputer = computers.find((pc) => pc.id === selected);
+
+  // Загрузка конфигурации VK
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-  }, [bookings]);
+    let cancelled = false;
 
-  // ==================================================
-  // ПРОВЕРКА ЗАНЯТОСТИ ПК
-  // ==================================================
+    async function loadVkConfig() {
+      try {
+        const response = await fetch("/api/config/public");
+        const data = await response.json();
+        if (!cancelled && data.vkConfigured && data.vkAppId) {
+          setVkConfigured(true);
+          initVkLogin(Number(data.vkAppId));
+        }
+      } catch (error) {
+        console.error("VK config error:", error);
+      }
+    }
+
+    loadVkConfig();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Обработка VK callback
+  useEffect(() => {
+    const callback = getVkCallbackParams();
+    if (!callback) return;
+
+    const meta = getStoredVkMeta();
+    if (!meta || meta.state !== callback.state) {
+      setVkError("Не удалось проверить авторизацию VK ID (state).");
+      return;
+    }
+
+    setVkLoading(true);
+    setVkError("");
+
+    fetch("/api/auth/vk/exchange", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...callback,
+        codeVerifier: meta.codeVerifier,
+        redirectUri: getVkRedirectUri(),
+      }),
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Ошибка VK авторизации");
+        return data;
+      })
+      .then((data) => {
+        const user = normalizeVkUser(data.user);
+
+        if (!user) {
+          throw new Error("VK не вернул идентификатор пользователя");
+        }
+
+        setVkUser(user);
+        localStorage.setItem(VK_USER_STORAGE_KEY, JSON.stringify(user));
+        clearStoredVkMeta();
+        window.history.replaceState({}, document.title, window.location.pathname);
+      })
+      .catch((error) => {
+        console.error("VK exchange error:", error);
+        setVkError(error instanceof Error ? error.message : "Ошибка VK авторизации");
+      })
+      .finally(() => {
+        setVkLoading(false);
+      });
+  }, []);
+
+  // Загрузка общих броней
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSharedBookings() {
+      try {
+        setBookingsLoading(true);
+        const response = await fetch(
+          `/api/bookings?date=${encodeURIComponent(date)}&_=${Date.now()}`,
+          { cache: "no-store" }
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Не удалось загрузить брони");
+        if (!cancelled) {
+          setBookings(data.bookings || []);
+          setBookingsError("");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Bookings load error:", error);
+          setBookingsError(error instanceof Error ? error.message : "Ошибка загрузки броней");
+        }
+      } finally {
+        if (!cancelled) setBookingsLoading(false);
+      }
+    }
+
+    loadSharedBookings();
+    const interval = window.setInterval(loadSharedBookings, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [date]);
+
+  // Загрузка моих броней с сервера
+  useEffect(() => {
+    if (!vkUser?.vkUserId) {
+      setMyBookings([]);
+      return;
+    }
+
+    async function fetchMyBookings() {
+      try {
+        const response = await fetch(
+          `/api/bookings?mine=true&vkUserId=${encodeURIComponent(vkUser!.vkUserId)}`
+        );
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Не удалось загрузить мои брони");
+        }
+        setMyBookings(data.bookings || []);
+      } catch (error) {
+        console.error("My bookings error:", error);
+        setMyBookings([]);
+      }
+    }
+
+    fetchMyBookings();
+  }, [vkUser?.vkUserId]);
+
   function isComputerBusy(computerId: number): boolean {
     const startNew = createLocalDate(date, time);
     const endNew = new Date(startNew.getTime() + duration * 60 * 60 * 1000);
@@ -277,25 +386,42 @@ const selectedComputer = computers.find((pc) => pc.id === selected);
     });
   }
 
-  // ==================================================
-  // ВЫБОР ПК
-  // ==================================================
-function handleComputerClick(id: number) {
-  setSelected(id);
-  setBookingOpen(true);
-}
-  // ==================================================
-  // ЗАКРЫТИЕ МОДАЛКИ
-  // ==================================================
+  function getBlockingBooking(computerId: number): Booking | null {
+    const startNew = createLocalDate(date, time);
+    const endNew = new Date(startNew.getTime() + duration * 60 * 60 * 1000);
+
+    return (
+      bookings.find((booking) => {
+        if (booking.computerId !== computerId) return false;
+        const startOld = createLocalDate(booking.date, booking.time);
+        const endOld = new Date(startOld.getTime() + booking.duration * 60 * 60 * 1000);
+        return startNew < endOld && endNew > startOld;
+      }) || null
+    );
+  }
+
+  function getBookingUntilLabel(computerId: number): string | null {
+    const booking = getBlockingBooking(computerId);
+    if (!booking) return null;
+
+    const end = new Date(
+      createLocalDate(booking.date, booking.time).getTime() + booking.duration * 60 * 60 * 1000
+    );
+
+    return `до ${formatTime(end)}`;
+  }
+
+  function handleComputerClick(id: number) {
+    setSelected(id);
+    setBookingOpen(true);
+  }
+
   function closeBookingModal() {
     setBookingOpen(false);
     setSelected(null);
   }
 
-  // ==================================================
-  // СОЗДАНИЕ БРОНИ
-  // ==================================================
-  function createBooking() {
+  async function createBooking() {
     if (selected === null || !clientName.trim() || !phone.trim()) {
       alert("Заполни имя и телефон.");
       return;
@@ -325,7 +451,6 @@ function handleComputerClick(id: number) {
       return;
     }
 
-    // Исправлено: передаём packageType
     const price = calculatePrice(computer.zone, date, time, duration, packageType);
 
     const newBooking: Booking = {
@@ -341,100 +466,130 @@ function handleComputerClick(id: number) {
       packageType,
     };
 
-    setBookings((prev) => [...prev, newBooking]);
-    setBookingOpen(false);
-    setSelected(null);
-    setClientName("");
-    setPhone("");
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newBooking,
+          vkUserId: vkUser?.vkUserId || null,
+        }),
+      });
 
-    alert(`Бронь создана!\n\nПК №${computer.id}\nСтоимость: ${price} ₽`);
+      const data = await response.json();
+      if (response.status === 409) {
+        alert(data.error || "Этот ПК уже занят на выбранное время.");
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(data.error || "Не удалось создать бронь");
+      }
+
+      const savedBooking = data.booking as Booking;
+      setBookings((prev) => [...prev, savedBooking]);
+      setMyBookings((prev) => [...prev, savedBooking]);
+      setBookingOpen(false);
+      setSelected(null);
+      setClientName("");
+      setPhone("");
+
+      alert(`Бронь создана!\n\nПК №${computer.id}\nСтоимость: ${price} ₽`);
+    } catch (error) {
+      console.error("Create booking error:", error);
+      alert(error instanceof Error ? error.message : "Не удалось создать бронь");
+    }
   }
 
-  // ==================================================
-  // ОТМЕНА БРОНИ
-  // ==================================================
-  function cancelBooking(id: string) {
-    setBookings((prev) => prev.filter((item) => item.id !== id));
+  async function cancelBooking(id: string) {
+    try {
+      const vkUserId = vkUser?.vkUserId || "";
+
+      const response = await fetch(
+        `/api/bookings/${encodeURIComponent(id)}?vkUserId=${encodeURIComponent(vkUserId)}`,
+        { method: "DELETE" }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Не удалось отменить бронь");
+      }
+
+      setBookings((prev) => prev.filter((item) => item.id !== id));
+      setMyBookings((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("Cancel booking error:", error);
+      alert(error instanceof Error ? error.message : "Не удалось отменить бронь");
+    }
   }
 
-  // ==================================================
-  // RENDER
-  // ==================================================
   return (
     <div className="app">
-      {/* ==================================================
-          HEADER
-      ================================================== */}
       <header className="header">
         <div className="header-brand">
-          <h1>
-            K2 <span>Gaming Club</span>
-          </h1>
+          <h1>K2 <span>Gaming Club</span></h1>
           <p>Бронирование компьютеров</p>
         </div>
         <div className="header-contact">
           <div className="work-time">🔥Работаем 24/7 — всегда на связи!</div>
           <div className="address">📍ул. Большая Московская, д. 140</div>
-          <div className="phone">
-            📲Контакты: <a href="tel:+78162273777">8 (8162) 273-777</a>
-          </div>
+          <div className="phone">📲Контакты: <a href="tel:+78162273777">8 (8162) 273-777</a></div>
         </div>
+
+        {vkUser ? (
+          <button className="vk-profile-btn" type="button" title="VK ID профиль">
+            <span className="vk-avatar">{vkUser.firstName?.[0] || "VK"}</span>
+            <span>{[vkUser.firstName, vkUser.lastName].filter(Boolean).join(" ") || "Профиль"}</span>
+          </button>
+        ) : (
+          <button
+            className="vk-login-btn"
+            type="button"
+            disabled={!vkConfigured || vkLoading}
+            onClick={() => beginVkLogin()}
+            title={vkConfigured ? "Войти через VK ID" : "Сначала настрой VK ID"}
+          >
+            {vkLoading ? "Вход..." : "Войти через VK"}
+          </button>
+        )}
+        {vkError && <div className="vk-error">{vkError}</div>}
+
         <button className="my-bookings-btn" onClick={() => setMyBookingsOpen(true)}>
-          Мои брони ({bookings.length})
+          👤 Личный кабинет
         </button>
       </header>
 
-      {/* ==================================================
-          MAP
-      ================================================== */}
       <section className="club-map">
-        {/* VIP */}
-        <div className="map-zone PREMIUM-zone">
-          <h2>PREMIUM</h2>
-        </div>
-        {/* BOOT CAMP */}
-        <div className="map-zone bootcamp-zone">
-          <h2>Boot Camp</h2>
-        </div>
-        {/* STANDART + */}
-        <div className="map-zone standart-plus-zone">
-          <h2>Standart +</h2>
-        </div>
-        {/* STANDART */}
-        <div className="map-zone standart-zone">
-          <h2>Standart</h2>
-        </div>
+        <div className="map-zone PREMIUM-zone"><h2>PREMIUM</h2></div>
+        <div className="map-zone bootcamp-zone"><h2>Boot Camp</h2></div>
+        <div className="map-zone standart-plus-zone"><h2>Standart +</h2></div>
+        <div className="map-zone standart-zone"><h2>Standart</h2></div>
 
-        {/* ==================================================
-            КОМПЬЮТЕРЫ
-        ================================================== */}
-        {computers.map((pc) => (
-          <button
-            key={pc.id}
-            className={`
-              computer
-              ${selected === pc.id ? "selected" : ""}
-              ${isComputerBusy(pc.id) ? "booked" : ""}
-            `}
-            style={{
-              left: `${pc.x}%`,
-              top: `${pc.y}%`,
-            }}
-            onClick={() => handleComputerClick(pc.id)}
-          >
-            {pc.id}
-          </button>
-        ))}
+        {bookingsError && (
+          <div className="bookings-sync-error">{bookingsError}</div>
+        )}
 
-        {/* ==================================================
-            МОДАЛКА БРОНИРОВАНИЯ
-        ================================================== */}
+        {computers.map((pc) => {
+          const bookingUntil = getBookingUntilLabel(pc.id);
+          return (
+            <button
+              key={pc.id}
+              className={`computer ${selected === pc.id ? "selected" : ""} ${isComputerBusy(pc.id) ? "booked" : ""}`}
+              style={{ left: `${pc.x}%`, top: `${pc.y}%` }}
+              onClick={() => handleComputerClick(pc.id)}
+            >
+              {pc.id}
+              {bookingUntil && (
+                <span className="computer-booking-until">{bookingUntil}</span>
+              )}
+            </button>
+          );
+        })}
+
         {bookingOpen && selectedComputer && (
           <div className="booking-overlay" onClick={closeBookingModal}>
             <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
-              <button className="booking-close" onClick={closeBookingModal}>
-                ×
-              </button>
+              <button className="booking-close" onClick={closeBookingModal}>×</button>
               <h2>Бронирование</h2>
               <div className="booking-pc">
                 <span>ПК №{selectedComputer.id}</span>
@@ -443,20 +598,12 @@ function handleComputerClick(id: number) {
 
               <label>
                 Имя клиента
-                <input
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Введите имя"
-                />
+                <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Введите имя" />
               </label>
 
               <label>
                 Телефон
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+7 999 999 99 99"
-                />
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 999 999 99 99" />
               </label>
 
               <label>
@@ -491,12 +638,7 @@ function handleComputerClick(id: number) {
                 <select
                   value={packageType}
                   onChange={(e) => {
-                    const value = e.target.value as
-                      | "hourly"
-                      | "morning"
-                      | "day"
-                      | "night"
-                      | "daily";
+                    const value = e.target.value as Booking["packageType"];
                     setPackageType(value);
                     if (value === "morning") {
                       setTime("08:00");
@@ -509,6 +651,7 @@ function handleComputerClick(id: number) {
                       setDuration(10);
                     } else if (value === "daily") {
                       setDuration(24);
+                      setTime("00:00");
                     } else if (value === "hourly") {
                       setDuration(1);
                     }
@@ -524,11 +667,7 @@ function handleComputerClick(id: number) {
 
               <label>
                 Длительность
-                <select
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
-                  // Ограничиваем доступные варианты в зависимости от типа
-                >
+                <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
                   {packageType === "hourly" ? (
                     <>
                       <option value={1}>1 час</option>
@@ -538,9 +677,6 @@ function handleComputerClick(id: number) {
                   ) : packageType === "daily" ? (
                     <option value={24}>24 часа</option>
                   ) : (
-                    // Для пакетов длительность фиксирована, но селект всё равно доступен,
-                    // поэтому показываем только те варианты, которые соответствуют пакету
-                    // (но можно просто задизейблить)
                     <>
                       {packageType === "morning" && <option value={5}>5 часов</option>}
                       {packageType === "day" && <option value={9}>9 часов</option>}
@@ -552,33 +688,33 @@ function handleComputerClick(id: number) {
 
               <div className="booking-price">
                 <span>Стоимость</span>
-                <strong>
-                  {/* Исправлено: добавлен packageType */}
-                  {calculatePrice(selectedComputer.zone, date, time, duration, packageType)} ₽
-                </strong>
+                <strong>{calculatePrice(selectedComputer.zone, date, time, duration, packageType)} ₽</strong>
               </div>
 
-              <button className="booking-submit" onClick={createBooking}>
-                Забронировать
-              </button>
+              <button className="booking-submit" onClick={createBooking}>Забронировать</button>
             </div>
           </div>
         )}
 
-        {/* ==================================================
-            МОИ БРОНИ
-        ================================================== */}
         {myBookingsOpen && (
           <div className="booking-overlay" onClick={() => setMyBookingsOpen(false)}>
             <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
-              <button className="booking-close" onClick={() => setMyBookingsOpen(false)}>
-                ×
-              </button>
-              <h2>Мои брони</h2>
-              {bookings.length === 0 ? (
+              <button className="booking-close" onClick={() => setMyBookingsOpen(false)}>×</button>
+              <h2>👤 Личный кабинет</h2>
+
+              {vkUser && (
+                <div className="profile-info">
+                  <p>{vkUser.firstName} {vkUser.lastName}</p>
+                  <p>ID: {vkUser.vkUserId}</p>
+                </div>
+              )}
+
+              <h3>Мои брони</h3>
+
+              {myBookings.length === 0 ? (
                 <p>Броней пока нет</p>
               ) : (
-                bookings.map((booking) => (
+                myBookings.map((booking) => (
                   <div key={booking.id} className="my-booking-card">
                     <h3>ПК №{booking.computerId}</h3>
                     <p>Дата: {booking.date}</p>
@@ -587,18 +723,14 @@ function handleComputerClick(id: number) {
                     <p>Клиент: {booking.clientName}</p>
                     <p>Телефон: {booking.phone}</p>
                     <strong>{booking.price} ₽</strong>
-                    <button className="cancel-booking" onClick={() => cancelBooking(booking.id)}>
+                    <button
+                      className="cancel-booking"
+                      onClick={() => cancelBooking(booking.id)}
+                    >
                       Отменить
                     </button>
                   </div>
                 ))
               )}
-            </div>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
 
 export default App;

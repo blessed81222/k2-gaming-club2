@@ -144,7 +144,6 @@ const prices = {
 };
 
 const VK_USER_STORAGE_KEY = "k2_vk_user";
-const GUEST_BOOKINGS_STORAGE_KEY = "k2_guest_bookings";
 
 function getToday(): string {
   const now = new Date();
@@ -204,68 +203,6 @@ function normalizeVkUser(user: any): K2User | null {
   } as K2User;
 }
 
-function loadGuestBookings(): Booking[] {
-  try {
-    const saved = localStorage.getItem(GUEST_BOOKINGS_STORAGE_KEY);
-    if (!saved) return [];
-
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .map((item) => item?.booking)
-      .filter(Boolean) as Booking[];
-  } catch {
-    return [];
-  }
-}
-
-function saveGuestBooking(booking: Booking, cancelToken: string) {
-  const saved = localStorage.getItem(GUEST_BOOKINGS_STORAGE_KEY);
-  let parsed: Array<{ booking: Booking; cancelToken: string }> = [];
-
-  try {
-    const value = saved ? JSON.parse(saved) : [];
-    parsed = Array.isArray(value) ? value : [];
-  } catch {
-    parsed = [];
-  }
-
-  const next = parsed.filter((item) => item?.booking?.id !== booking.id);
-  next.push({ booking, cancelToken });
-  localStorage.setItem(GUEST_BOOKINGS_STORAGE_KEY, JSON.stringify(next));
-}
-
-function getGuestBookingToken(id: string): string | null {
-  try {
-    const saved = localStorage.getItem(GUEST_BOOKINGS_STORAGE_KEY);
-    if (!saved) return null;
-
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return null;
-
-    const match = parsed.find((item) => item?.booking?.id === id);
-    return match?.cancelToken ? String(match.cancelToken) : null;
-  } catch {
-    return null;
-  }
-}
-
-function removeGuestBooking(id: string) {
-  try {
-    const saved = localStorage.getItem(GUEST_BOOKINGS_STORAGE_KEY);
-    if (!saved) return;
-
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return;
-
-    const next = parsed.filter((item) => item?.booking?.id !== id);
-    localStorage.setItem(GUEST_BOOKINGS_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // Ignore local storage errors.
-  }
-}
-
 function loadStoredVkUser(): K2User | null {
   try {
     const saved = localStorage.getItem(VK_USER_STORAGE_KEY);
@@ -287,7 +224,7 @@ function App() {
   const [vkError, setVkError] = useState("");
 
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [myBookings, setMyBookings] = useState<Booking[]>(() => loadGuestBookings());
+  const [myBookings, setMyBookings] = useState<Booking[]>([]);
   const [, setBookingsLoading] = useState(true);
   const [bookingsError, setBookingsError] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
@@ -549,11 +486,6 @@ function App() {
       }
 
       const savedBooking = data.booking as Booking;
-
-      if (!vkUser?.vkUserId && data.cancelToken) {
-        saveGuestBooking(savedBooking, String(data.cancelToken));
-      }
-
       setBookings((prev) => [...prev, savedBooking]);
       setMyBookings((prev) => [...prev, savedBooking]);
       setBookingOpen(false);
@@ -571,15 +503,9 @@ function App() {
   async function cancelBooking(id: string) {
     try {
       const vkUserId = vkUser?.vkUserId || "";
-      const cancelToken = vkUserId ? "" : getGuestBookingToken(id) || "";
 
-      const params = new URLSearchParams();
-      if (vkUserId) params.set("vkUserId", vkUserId);
-      if (cancelToken) params.set("cancelToken", cancelToken);
-
-      const query = params.toString();
       const response = await fetch(
-        `/api/bookings/${encodeURIComponent(id)}${query ? `?${query}` : ""}`,
+        `/api/bookings/${encodeURIComponent(id)}?vkUserId=${encodeURIComponent(vkUserId)}`,
         { method: "DELETE" }
       );
 
@@ -587,10 +513,6 @@ function App() {
 
       if (!response.ok) {
         throw new Error(data.error || "Не удалось отменить бронь");
-      }
-
-      if (!vkUserId) {
-        removeGuestBooking(id);
       }
 
       setBookings((prev) => prev.filter((item) => item.id !== id));

@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { supabase } from "./supabase.mjs";
 
 function mapBooking(row) {
@@ -96,8 +95,6 @@ export async function createBooking(body) {
     );
   }
 
-  const cancelToken = randomUUID();
-
   const { data, error } = await supabase
     .from("bookings")
     .insert({
@@ -111,26 +108,20 @@ export async function createBooking(body) {
       price,
       package_type: packageType,
       vk_user_id: vkUserId,
-      cancel_token: cancelToken,
     })
     .select("*")
     .single();
 
   if (error) throw error;
-
-  return {
-    booking: mapBooking(data),
-    cancelToken: vkUserId ? null : cancelToken,
-  };
+  return mapBooking(data);
 }
 
-export async function deleteBooking(id, vkUserId, cancelToken) {
+export async function deleteBooking(id, vkUserId) {
   const normalizedVkUserId = String(vkUserId || "").trim();
-  const normalizedCancelToken = String(cancelToken || "").trim();
 
   const { data: booking, error: findError } = await supabase
     .from("bookings")
-    .select("id, vk_user_id, cancel_token")
+    .select("id, vk_user_id")
     .eq("id", id)
     .single();
 
@@ -141,25 +132,16 @@ export async function deleteBooking(id, vkUserId, cancelToken) {
     throw findError;
   }
 
-  if (booking.vk_user_id) {
-    if (!normalizedVkUserId || booking.vk_user_id !== normalizedVkUserId) {
-      throw createError("Вы не можете отменить эту бронь", "BOOKING_NOT_OWNER");
-    }
-  } else {
-    if (!normalizedCancelToken || booking.cancel_token !== normalizedCancelToken) {
-      throw createError("Вы не можете отменить эту бронь", "BOOKING_NOT_OWNER");
-    }
+  // Владелец VK-брони должен совпадать с текущим VK-пользователем.
+  if (!booking.vk_user_id || booking.vk_user_id !== normalizedVkUserId) {
+    throw createError("Вы не можете отменить эту бронь", "BOOKING_NOT_OWNER");
   }
 
-  let deleteQuery = supabase.from("bookings").delete().eq("id", id);
-
-  if (booking.vk_user_id) {
-    deleteQuery = deleteQuery.eq("vk_user_id", normalizedVkUserId);
-  } else {
-    deleteQuery = deleteQuery.eq("cancel_token", normalizedCancelToken);
-  }
-
-  const { error: deleteError } = await deleteQuery;
+  const { error: deleteError } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", id)
+    .eq("vk_user_id", normalizedVkUserId);
 
   if (deleteError) throw deleteError;
 }

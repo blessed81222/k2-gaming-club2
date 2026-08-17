@@ -14,9 +14,8 @@ export default async function handler(req, res) {
 
     const url = new URL(req.url, "https://local.invalid");
     const vkUserId = String(req.query?.vkUserId || url.searchParams.get("vkUserId") || "").trim();
-    const cancelToken = String(req.query?.cancelToken || url.searchParams.get("cancelToken") || "").trim();
 
-    await deleteBooking(String(id), vkUserId, cancelToken);
+    await deleteBooking(String(id), vkUserId);
 
     return res.status(200).json({ ok: true });
   } catch (error) {

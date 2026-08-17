@@ -28,12 +28,8 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       try {
-        const result = await createBooking(body);
-        return res.status(201).json({
-          ok: true,
-          booking: result.booking,
-          cancelToken: result.cancelToken,
-        });
+        const booking = await createBooking(body);
+        return res.status(201).json({ ok: true, booking });
       } catch (error) {
         if (error?.code === "BOOKING_CONFLICT") {
           return res.status(409).json({ ok: false, error: error.message, conflict: error.conflict });
