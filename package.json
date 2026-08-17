@@ -11,6 +11,7 @@
     "server": "node --env-file=.env server/index.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "@vkid/sdk": "^2.6.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
