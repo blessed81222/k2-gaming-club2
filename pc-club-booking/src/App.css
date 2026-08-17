@@ -116,24 +116,6 @@ body {
   flex: 1;
 }
 
-.my-bookings-btn {
-  border: 1px solid rgba(139, 105, 255, 0.55);
-  border-radius: 12px;
-  padding: 12px 18px;
-  color: #ffffff;
-  background: linear-gradient(
-    135deg,
-    rgba(113, 67, 255, 0.95),
-    rgba(71, 103, 255, 0.95)
-  );
-  box-shadow:
-    0 8px 25px rgba(87, 66, 255, 0.28),
-    inset 0 1px 0 rgba(255,255,255,0.18);
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
 .my-bookings-btn:hover {
   transform: translateY(-2px);
   box-shadow:

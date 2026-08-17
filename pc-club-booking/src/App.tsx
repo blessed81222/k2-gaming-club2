@@ -536,12 +536,21 @@ function App() {
           <div className="phone">📲Контакты: <a href="tel:+78162273777">8 (8162) 273-777</a></div>
         </div>
 
-        {vkUser ? (
-          <button className="vk-profile-btn" type="button" title="VK ID профиль">
-            <span className="vk-avatar">{vkUser.firstName?.[0] || "VK"}</span>
-            <span>{[vkUser.firstName, vkUser.lastName].filter(Boolean).join(" ") || "Профиль"}</span>
-          </button>
-        ) : (
+        {vkUser ? ( 
+  <button 
+    className="vk-profile-btn" 
+    type="button" 
+    title="VK ID профиль"
+    onClick={() => setMyBookingsOpen(true)}
+  > 
+    <span className="vk-avatar">
+      {vkUser.firstName?.[0] || "VK"}
+    </span> 
+    <span>
+      {[vkUser.firstName, vkUser.lastName].filter(Boolean).join(" ") || "Профиль"}
+    </span> 
+  </button> 
+) : (
           <button
             className="vk-login-btn"
             type="button"
@@ -554,9 +563,7 @@ function App() {
         )}
         {vkError && <div className="vk-error">{vkError}</div>}
 
-        <button className="my-bookings-btn" onClick={() => setMyBookingsOpen(true)}>
-          👤 Личный кабинет
-        </button>
+      
       </header>
 
       <section className="club-map">
@@ -733,4 +740,4 @@ function App() {
                 ))
               )}
 
-export default App;
+export default App;git add
