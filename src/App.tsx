@@ -615,11 +615,23 @@ function App() {
         </div>
 
         {vkUser ? (
-          <button className="vk-profile-btn" type="button" title="VK ID профиль">
-            <span className="vk-avatar">{vkUser.firstName?.[0] || "VK"}</span>
-            <span>{[vkUser.firstName, vkUser.lastName].filter(Boolean).join(" ") || "Профиль"}</span>
-          </button>
-        ) : (
+  <button
+    className="vk-profile-btn"
+    type="button"
+    title="Личный кабинет"
+    onClick={() => setMyBookingsOpen(true)}
+  >
+    <span className="vk-avatar">
+      {vkUser.firstName?.[0] || "VK"}
+    </span>
+
+    <span>
+      {[vkUser.firstName, vkUser.lastName]
+        .filter(Boolean)
+        .join(" ") || "Профиль"}
+    </span>
+  </button>
+) : (
           <button
             className="vk-login-btn"
             type="button"
