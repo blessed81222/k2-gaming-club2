@@ -644,9 +644,7 @@ function App() {
         )}
         {vkError && <div className="vk-error">{vkError}</div>}
 
-        <button className="my-bookings-btn" onClick={() => setMyBookingsOpen(true)}>
-          Мои брони ({myBookings.length})
-        </button>
+        
       </header>
 
       <section className="club-map">

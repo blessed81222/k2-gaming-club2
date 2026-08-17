@@ -537,7 +537,12 @@ function App() {
         </div>
 
         {vkUser ? (
-          <button className="vk-profile-btn" type="button" title="VK ID профиль">
+          <button
+  className="vk-profile-btn"
+  type="button"
+  title="VK ID профиль"
+  onClick={() => setMyBookingsOpen(true)}
+>
             <span className="vk-avatar">{vkUser.firstName?.[0] || "VK"}</span>
             <span>{[vkUser.firstName, vkUser.lastName].filter(Boolean).join(" ") || "Профиль"}</span>
           </button>
@@ -554,9 +559,6 @@ function App() {
         )}
         {vkError && <div className="vk-error">{vkError}</div>}
 
-        <button className="my-bookings-btn" onClick={() => setMyBookingsOpen(true)}>
-          Мои брони ({myBookings.length})
-        </button>
       </header>
 
       <section className="club-map">
