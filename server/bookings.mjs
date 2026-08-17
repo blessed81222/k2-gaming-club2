@@ -98,21 +98,29 @@ export async function createBooking(body) {
 
   const cancelToken = randomUUID();
 
+  const startAt = toBookingStart(date, time);
+
+  const endAt = new Date(
+    startAt.getTime() + duration * 60 * 60 * 1000
+  );
+
   const { data, error } = await supabase
     .from("bookings")
     .insert({
-      computer_id: computerId,
-      zone,
-      client_name: clientName,
-      phone,
-      booking_date: date,
-      booking_time: time,
-      duration_hours: duration,
-      price,
-      package_type: packageType,
-      vk_user_id: vkUserId,
-      cancel_token: cancelToken,
-    })
+  computer_id: computerId,
+  zone,
+  client_name: clientName,
+  phone,
+  booking_date: date,
+  booking_time: time,
+  duration_hours: duration,
+  price,
+  package_type: packageType,
+  vk_user_id: vkUserId,
+  cancel_token: cancelToken,
+  start_at: startAt.toISOString(),
+  end_at: endAt.toISOString(),
+})
     .select("*")
     .single();
 
