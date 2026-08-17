@@ -790,7 +790,16 @@ function App() {
           <div className="booking-overlay" onClick={() => setMyBookingsOpen(false)}>
             <div className="booking-modal" onClick={(e) => e.stopPropagation()}>
               <button className="booking-close" onClick={() => setMyBookingsOpen(false)}>×</button>
-              <h2>Мои брони</h2>
+              <h2>👤 Личный кабинет</h2>
+
+{vkUser && (
+  <div className="profile-info">
+    <p>{vkUser.firstName} {vkUser.lastName}</p>
+    <p>ID: {vkUser.vkUserId}</p>
+  </div>
+)}
+
+<h3>Мои брони</h3>
               {myBookings.length === 0 ? (
                 <p>Броней пока нет</p>
               ) : (
