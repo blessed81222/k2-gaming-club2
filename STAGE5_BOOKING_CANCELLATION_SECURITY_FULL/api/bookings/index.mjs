@@ -28,8 +28,13 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       try {
-        const booking = await createBooking(body);
-        return res.status(201).json({ ok: true, booking });
+        const result = await createBooking(body);
+
+return res.status(201).json({
+  ok: true,
+  booking: result.booking,
+  cancelToken: result.cancelToken || null,
+});
       } catch (error) {
         if (error?.code === "BOOKING_CONFLICT") {
           return res.status(409).json({ ok: false, error: error.message, conflict: error.conflict });
@@ -48,3 +53,22 @@ export default async function handler(req, res) {
     });
   }
 }
+
+
+const vkUserId = String(
+  req.query?.vkUserId ||
+  url.searchParams.get("vkUserId") ||
+  ""
+).trim();
+
+const cancelToken = String(
+  req.query?.cancelToken ||
+  url.searchParams.get("cancelToken") ||
+  ""
+).trim();
+
+await deleteBooking(
+  String(id),
+  vkUserId,
+  cancelToken
+);

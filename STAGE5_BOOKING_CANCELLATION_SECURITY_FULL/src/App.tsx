@@ -501,13 +501,26 @@ function App() {
   }
 
   async function cancelBooking(id: string) {
-    try {
-      const vkUserId = vkUser?.vkUserId || "";
+  try {
+    const vkUserId = vkUser?.vkUserId || "";
 
-      const response = await fetch(
-        `/api/bookings/${encodeURIComponent(id)}?vkUserId=${encodeURIComponent(vkUserId)}`,
-        { method: "DELETE" }
-      );
+    const guestTokens = loadGuestCancelTokens();
+    const cancelToken = guestTokens[id] || "";
+
+    const params = new URLSearchParams();
+
+    if (vkUserId) {
+      params.set("vkUserId", vkUserId);
+    }
+
+    if (cancelToken) {
+      params.set("cancelToken", cancelToken);
+    }
+
+    const response = await fetch(
+      `/api/bookings/${encodeURIComponent(id)}?${params.toString()}`,
+      { method: "DELETE" }
+    );
 
       const data = await response.json();
 

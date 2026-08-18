@@ -1,3 +1,4 @@
+import { sendBookingNotification } from "./vkNotify.mjs";
 import { randomUUID } from "node:crypto";
 import { supabase } from "./supabase.mjs";
 
@@ -26,6 +27,7 @@ function createError(message, code) {
 function toBookingStart(date, time) {
   const [year, month, day] = String(date).split("-").map(Number);
   const [hour, minute] = String(time).split(":").map(Number);
+
   return new Date(year, month - 1, day, hour, minute, 0, 0);
 }
 
@@ -37,12 +39,16 @@ export async function listBookings(date) {
     .order("booking_time", { ascending: true });
 
   if (error) throw error;
+
   return (data || []).map(mapBooking);
 }
 
 export async function listMyBookings(vkUserId) {
   const normalizedVkUserId = String(vkUserId || "").trim();
-  if (!normalizedVkUserId) return [];
+
+  if (!normalizedVkUserId) {
+    return [];
+  }
 
   const { data, error } = await supabase
     .from("bookings")
@@ -52,6 +58,7 @@ export async function listMyBookings(vkUserId) {
     .order("booking_time", { ascending: true });
 
   if (error) throw error;
+
   return (data || []).map(mapBooking);
 }
 
@@ -65,9 +72,21 @@ export async function createBooking(body) {
   const duration = Number(body?.duration);
   const price = Number(body?.price);
   const packageType = String(body?.packageType || "hourly");
-  const vkUserId = body?.vkUserId ? String(body.vkUserId).trim() : null;
+  const vkUserId = body?.vkUserId
+    ? String(body.vkUserId).trim()
+    : null;
 
-  if (!Number.isInteger(computerId) || !zone || !clientName || !phone || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}(?::\d{2})?$/.test(time) || !Number.isFinite(duration) || duration <= 0 || !Number.isFinite(price)) {
+  if (
+    !Number.isInteger(computerId) ||
+    !zone ||
+    !clientName ||
+    !phone ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+    !/^\d{2}:\d{2}(?::\d{2})?$/.test(time) ||
+    !Number.isFinite(duration) ||
+    duration <= 0 ||
+    !Number.isFinite(price)
+  ) {
     throw new Error("Invalid booking data");
   }
 
@@ -77,22 +96,40 @@ export async function createBooking(body) {
     .eq("computer_id", computerId)
     .eq("booking_date", date);
 
-  if (existingError) throw existingError;
+  if (existingError) {
+    throw existingError;
+  }
 
   const newStart = toBookingStart(date, time);
-  const newEnd = new Date(newStart.getTime() + duration * 60 * 60 * 1000);
+  const newEnd = new Date(
+    newStart.getTime() + duration * 60 * 60 * 1000
+  );
 
   const conflict = (existingRows || []).find((row) => {
-    const oldStart = toBookingStart(row.booking_date, row.booking_time);
-    const oldEnd = new Date(oldStart.getTime() + Number(row.duration_hours) * 60 * 60 * 1000);
+    const oldStart = toBookingStart(
+      row.booking_date,
+      row.booking_time
+    );
+
+    const oldEnd = new Date(
+      oldStart.getTime() +
+        Number(row.duration_hours) * 60 * 60 * 1000
+    );
+
     return newStart < oldEnd && newEnd > oldStart;
   });
 
   if (conflict) {
     const mapped = mapBooking(conflict);
+
     throw Object.assign(
-      createError("Этот ПК уже занят на выбранное время.", "BOOKING_CONFLICT"),
-      { conflict: mapped }
+      createError(
+        "Этот ПК уже занят на выбранное время.",
+        "BOOKING_CONFLICT"
+      ),
+      {
+        conflict: mapped,
+      }
     );
   }
 
@@ -107,34 +144,46 @@ export async function createBooking(body) {
   const { data, error } = await supabase
     .from("bookings")
     .insert({
-  computer_id: computerId,
-  zone,
-  client_name: clientName,
-  phone,
-  booking_date: date,
-  booking_time: time,
-  duration_hours: duration,
-  price,
-  package_type: packageType,
-  vk_user_id: vkUserId,
-  cancel_token: cancelToken,
-  start_at: startAt.toISOString(),
-  end_at: endAt.toISOString(),
-})
+      computer_id: computerId,
+      zone,
+      client_name: clientName,
+      phone,
+      booking_date: date,
+      booking_time: time,
+      duration_hours: duration,
+      price,
+      package_type: packageType,
+      vk_user_id: vkUserId,
+      cancel_token: cancelToken,
+      start_at: startAt.toISOString(),
+      end_at: endAt.toISOString(),
+    })
     .select("*")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
+  const booking = mapBooking(data);
+
+  await sendBookingNotification(booking, "created");
 
   return {
-    booking: mapBooking(data),
+    booking,
     cancelToken: vkUserId ? null : cancelToken,
   };
 }
 
-export async function deleteBooking(id, vkUserId, cancelToken) {
+export async function deleteBooking(
+  id,
+  vkUserId,
+  cancelToken
+) {
   const normalizedVkUserId = String(vkUserId || "").trim();
-  const normalizedCancelToken = String(cancelToken || "").trim();
+  const normalizedCancelToken = String(
+    cancelToken || ""
+  ).trim();
 
   const { data: booking, error: findError } = await supabase
     .from("bookings")
@@ -144,30 +193,57 @@ export async function deleteBooking(id, vkUserId, cancelToken) {
 
   if (findError) {
     if (findError.code === "PGRST116") {
-      throw createError("Бронь не найдена", "BOOKING_NOT_OWNER");
+      throw createError(
+        "Бронь не найдена",
+        "BOOKING_NOT_OWNER"
+      );
     }
+
     throw findError;
   }
 
   if (booking.vk_user_id) {
-    if (!normalizedVkUserId || booking.vk_user_id !== normalizedVkUserId) {
-      throw createError("Вы не можете отменить эту бронь", "BOOKING_NOT_OWNER");
+    if (
+      !normalizedVkUserId ||
+      booking.vk_user_id !== normalizedVkUserId
+    ) {
+      throw createError(
+        "Вы не можете отменить эту бронь",
+        "BOOKING_NOT_OWNER"
+      );
     }
   } else {
-    if (!normalizedCancelToken || booking.cancel_token !== normalizedCancelToken) {
-      throw createError("Вы не можете отменить эту бронь", "BOOKING_NOT_OWNER");
+    if (
+      !normalizedCancelToken ||
+      booking.cancel_token !== normalizedCancelToken
+    ) {
+      throw createError(
+        "Вы не можете отменить эту бронь",
+        "BOOKING_NOT_OWNER"
+      );
     }
   }
 
-  let deleteQuery = supabase.from("bookings").delete().eq("id", id);
+  let deleteQuery = supabase
+    .from("bookings")
+    .delete()
+    .eq("id", id);
 
   if (booking.vk_user_id) {
-    deleteQuery = deleteQuery.eq("vk_user_id", normalizedVkUserId);
+    deleteQuery = deleteQuery.eq(
+      "vk_user_id",
+      normalizedVkUserId
+    );
   } else {
-    deleteQuery = deleteQuery.eq("cancel_token", normalizedCancelToken);
+    deleteQuery = deleteQuery.eq(
+      "cancel_token",
+      normalizedCancelToken
+    );
   }
 
   const { error: deleteError } = await deleteQuery;
 
-  if (deleteError) throw deleteError;
+  if (deleteError) {
+    throw deleteError;
+  }
 }

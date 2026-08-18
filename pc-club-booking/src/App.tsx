@@ -349,30 +349,37 @@ function App() {
   }, [date]);
 
   // Загрузка моих броней с сервера
-  useEffect(() => {
-    if (!vkUser?.vkUserId) {
-      setMyBookings([]);
-      return;
-    }
+ useEffect(() => {
+  if (!vkUser?.vkUserId) {
+    setMyBookings(loadGuestBookings());
+    return;
+  }
 
-    async function fetchMyBookings() {
-      try {
-        const response = await fetch(
-          `/api/bookings?mine=true&vkUserId=${encodeURIComponent(vkUser!.vkUserId)}`
+  async function fetchMyBookings() {
+    try {
+      const response = await fetch(
+        `/api/bookings?mine=true&vkUserId=${encodeURIComponent(
+          vkUser.vkUserId
+        )}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Не удалось загрузить мои брони"
         );
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Не удалось загрузить мои брони");
-        }
-        setMyBookings(data.bookings || []);
-      } catch (error) {
-        console.error("My bookings error:", error);
-        setMyBookings([]);
       }
-    }
 
-    fetchMyBookings();
-  }, [vkUser?.vkUserId]);
+      setMyBookings(data.bookings || []);
+    } catch (error) {
+      console.error("My bookings error:", error);
+      setMyBookings([]);
+    }
+  }
+
+  fetchMyBookings();
+}, [vkUser?.vkUserId]);
 
   function isComputerBusy(computerId: number): boolean {
     const startNew = createLocalDate(date, time);
@@ -485,6 +492,16 @@ function App() {
         throw new Error(data.error || "Не удалось создать бронь");
       }
 
+      if (!vkUser?.vkUserId && data.cancelToken) {
+  const tokens = loadGuestCancelTokens();
+
+  tokens[data.booking.id] = data.cancelToken;
+
+  localStorage.setItem(
+    GUEST_CANCEL_TOKENS_KEY,
+    JSON.stringify(tokens)
+  );
+}
       const savedBooking = data.booking as Booking;
       setBookings((prev) => [...prev, savedBooking]);
       setMyBookings((prev) => [...prev, savedBooking]);
@@ -504,10 +521,23 @@ function App() {
     try {
       const vkUserId = vkUser?.vkUserId || "";
 
-      const response = await fetch(
-        `/api/bookings/${encodeURIComponent(id)}?vkUserId=${encodeURIComponent(vkUserId)}`,
-        { method: "DELETE" }
-      );
+const guestTokens = loadGuestCancelTokens();
+const cancelToken = guestTokens[id] || "";
+
+const params = new URLSearchParams();
+
+if (vkUserId) {
+  params.set("vkUserId", vkUserId);
+}
+
+if (cancelToken) {
+  params.set("cancelToken", cancelToken);
+}
+
+const response = await fetch(
+  `/api/bookings/${encodeURIComponent(id)}?${params.toString()}`,
+  { method: "DELETE" }
+);
 
       const data = await response.json();
 

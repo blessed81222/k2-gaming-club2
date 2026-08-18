@@ -23,6 +23,7 @@ type Booking = {
   duration: number;
   price: number;
   packageType: "hourly" | "morning" | "day" | "night" | "daily";
+  vkUserId: string | null;
 };
 
 const computers: Computer[] = [
@@ -145,6 +146,15 @@ const prices = {
 
 const VK_USER_STORAGE_KEY = "k2_vk_user";
 const GUEST_BOOKINGS_STORAGE_KEY = "k2_guest_bookings";
+const GUEST_CANCEL_TOKENS_KEY = "k2_guest_cancel_tokens";
+
+function loadGuestCancelTokens(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(GUEST_CANCEL_TOKENS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
 
 function getToday(): string {
   const now = new Date();
@@ -234,36 +244,11 @@ function saveGuestBooking(booking: Booking, cancelToken: string) {
   const next = parsed.filter((item) => item?.booking?.id !== booking.id);
   next.push({ booking, cancelToken });
   localStorage.setItem(GUEST_BOOKINGS_STORAGE_KEY, JSON.stringify(next));
-}
 
-function getGuestBookingToken(id: string): string | null {
-  try {
-    const saved = localStorage.getItem(GUEST_BOOKINGS_STORAGE_KEY);
-    if (!saved) return null;
-
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return null;
-
-    const match = parsed.find((item) => item?.booking?.id === id);
-    return match?.cancelToken ? String(match.cancelToken) : null;
-  } catch {
-    return null;
-  }
-}
-
-function removeGuestBooking(id: string) {
-  try {
-    const saved = localStorage.getItem(GUEST_BOOKINGS_STORAGE_KEY);
-    if (!saved) return;
-
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return;
-
-    const next = parsed.filter((item) => item?.booking?.id !== id);
-    localStorage.setItem(GUEST_BOOKINGS_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // Ignore local storage errors.
-  }
+  // Сохраняем cancelToken отдельно
+  const tokens = loadGuestCancelTokens();
+  tokens[booking.id] = cancelToken;
+  localStorage.setItem(GUEST_CANCEL_TOKENS_KEY, JSON.stringify(tokens));
 }
 
 function loadStoredVkUser(): K2User | null {
@@ -414,7 +399,7 @@ function App() {
   // Загрузка моих броней с сервера
   useEffect(() => {
     if (!vkUser?.vkUserId) {
-      setMyBookings([]);
+      setMyBookings(loadGuestBookings());
       return;
     }
 
@@ -430,7 +415,7 @@ function App() {
         setMyBookings(data.bookings || []);
       } catch (error) {
         console.error("My bookings error:", error);
-        setMyBookings([]);
+        setMyBookings(loadGuestBookings());
       }
     }
 
@@ -527,6 +512,7 @@ function App() {
       duration,
       price,
       packageType,
+      vkUserId: vkUser?.vkUserId || null,
     };
 
     try {
@@ -571,15 +557,23 @@ function App() {
   async function cancelBooking(id: string) {
     try {
       const vkUserId = vkUser?.vkUserId || "";
-      const cancelToken = vkUserId ? "" : getGuestBookingToken(id) || "";
+
+      // Получаем токен гостевой брони, если пользователь не вошёл через VK
+      const guestTokens = loadGuestCancelTokens();
+      const cancelToken = guestTokens[id] || "";
 
       const params = new URLSearchParams();
-      if (vkUserId) params.set("vkUserId", vkUserId);
-      if (cancelToken) params.set("cancelToken", cancelToken);
 
-      const query = params.toString();
+      if (vkUserId) {
+        params.set("vkUserId", vkUserId);
+      }
+
+      if (cancelToken) {
+        params.set("cancelToken", cancelToken);
+      }
+
       const response = await fetch(
-        `/api/bookings/${encodeURIComponent(id)}${query ? `?${query}` : ""}`,
+        `/api/bookings/${encodeURIComponent(id)}?${params.toString()}`,
         { method: "DELETE" }
       );
 
@@ -589,12 +583,30 @@ function App() {
         throw new Error(data.error || "Не удалось отменить бронь");
       }
 
-      if (!vkUserId) {
-        removeGuestBooking(id);
-      }
-
       setBookings((prev) => prev.filter((item) => item.id !== id));
       setMyBookings((prev) => prev.filter((item) => item.id !== id));
+
+      // После отмены гостевой брони удаляем использованный токен
+const guestBookings = loadGuestBookings().filter(
+  (item) => item.id !== id
+);
+
+delete guestTokens[id];
+
+localStorage.setItem(
+  GUEST_CANCEL_TOKENS_KEY,
+  JSON.stringify(guestTokens)
+);
+
+localStorage.setItem(
+  GUEST_BOOKINGS_STORAGE_KEY,
+  JSON.stringify(
+    guestBookings.map((booking) => ({
+      booking,
+      cancelToken: guestTokens[booking.id] || "",
+    }))
+  )
+);
     } catch (error) {
       console.error("Cancel booking error:", error);
       alert(error instanceof Error ? error.message : "Не удалось отменить бронь");
@@ -615,23 +627,16 @@ function App() {
         </div>
 
         {vkUser ? (
-  <button
-    className="vk-profile-btn"
-    type="button"
-    title="Личный кабинет"
-    onClick={() => setMyBookingsOpen(true)}
-  >
-    <span className="vk-avatar">
-      {vkUser.firstName?.[0] || "VK"}
-    </span>
-
-    <span>
-      {[vkUser.firstName, vkUser.lastName]
-        .filter(Boolean)
-        .join(" ") || "Профиль"}
-    </span>
-  </button>
-) : (
+          <button
+            className="vk-profile-btn"
+            type="button"
+            title="Личный кабинет"
+            onClick={() => setMyBookingsOpen(true)}
+          >
+            <span className="vk-avatar">{vkUser.firstName?.[0] || "VK"}</span>
+            <span>{[vkUser.firstName, vkUser.lastName].filter(Boolean).join(" ") || "Профиль"}</span>
+          </button>
+        ) : (
           <button
             className="vk-login-btn"
             type="button"
@@ -643,8 +648,6 @@ function App() {
           </button>
         )}
         {vkError && <div className="vk-error">{vkError}</div>}
-
-        
       </header>
 
       <section className="club-map">
@@ -790,14 +793,14 @@ function App() {
               <button className="booking-close" onClick={() => setMyBookingsOpen(false)}>×</button>
               <h2>👤 Личный кабинет</h2>
 
-{vkUser && (
-  <div className="profile-info">
-    <p>{vkUser.firstName} {vkUser.lastName}</p>
-    <p>ID: {vkUser.vkUserId}</p>
-  </div>
-)}
+              {vkUser && (
+                <div className="profile-info">
+                  <p>{vkUser.firstName} {vkUser.lastName}</p>
+                  <p>ID: {vkUser.vkUserId}</p>
+                </div>
+              )}
 
-<h3>Мои брони</h3>
+              <h3>Мои брони</h3>
               {myBookings.length === 0 ? (
                 <p>Броней пока нет</p>
               ) : (
