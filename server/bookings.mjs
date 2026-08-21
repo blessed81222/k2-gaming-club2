@@ -1,6 +1,11 @@
 import { sendBookingNotification } from "./vkNotify.mjs";
 import { randomUUID } from "node:crypto";
 import { supabase } from "./supabase.mjs";
+import {
+  cancelGizmoReservation,
+  createGizmoReservation,
+  getGizmoConfigStatus,
+} from "./gizmo.mjs";
 
 function mapBooking(row) {
   return {
@@ -15,6 +20,8 @@ function mapBooking(row) {
     price: row.price,
     packageType: row.package_type,
     vkUserId: row.vk_user_id ?? null,
+    gizmoReservationId: row.gizmo_reservation_id ?? null,
+    gizmoSyncStatus: row.gizmo_sync_status ?? "disabled",
   };
 }
 
@@ -165,7 +172,50 @@ export async function createBooking(body) {
     throw error;
   }
 
-  const booking = mapBooking(data);
+  let booking = mapBooking(data);
+  let gizmoSyncStatus = "disabled";
+  let gizmoReservationId = null;
+
+  try {
+    const gizmoResult = await createGizmoReservation(booking);
+    gizmoSyncStatus = gizmoResult.status;
+    gizmoReservationId = gizmoResult.reservationId;
+
+    if (gizmoReservationId) {
+      const { error: gizmoPersistError } = await supabase
+        .from("bookings")
+        .update({
+          gizmo_reservation_id: gizmoReservationId,
+          gizmo_sync_status: gizmoSyncStatus,
+          gizmo_sync_error: null,
+        })
+        .eq("id", booking.id);
+
+      if (gizmoPersistError) {
+        console.warn(
+          "Gizmo reservation was created, but its id was not stored. Apply supabase_gizmo_sync.sql.",
+          gizmoPersistError.message
+        );
+      }
+    }
+  } catch (gizmoError) {
+    console.error("Gizmo booking sync error:", gizmoError);
+    gizmoSyncStatus = "error";
+
+    if (getGizmoConfigStatus().required) {
+      await supabase.from("bookings").delete().eq("id", booking.id);
+      throw createError(
+        "Не удалось передать бронь в Gizmo. Попробуйте ещё раз.",
+        "GIZMO_SYNC_FAILED"
+      );
+    }
+  }
+
+  booking = {
+    ...booking,
+    gizmoReservationId,
+    gizmoSyncStatus,
+  };
 
   await sendBookingNotification(booking, "created");
 
@@ -187,7 +237,7 @@ export async function deleteBooking(
 
   const { data: booking, error: findError } = await supabase
     .from("bookings")
-    .select("id, vk_user_id, cancel_token")
+    .select("*")
     .eq("id", id)
     .single();
 
@@ -220,6 +270,18 @@ export async function deleteBooking(
       throw createError(
         "Вы не можете отменить эту бронь",
         "BOOKING_NOT_OWNER"
+      );
+    }
+  }
+
+  if (booking.gizmo_reservation_id) {
+    try {
+      await cancelGizmoReservation(booking.gizmo_reservation_id);
+    } catch (gizmoError) {
+      console.error("Gizmo cancellation sync error:", gizmoError);
+      throw createError(
+        "Не удалось отменить бронь в Gizmo. Попробуйте ещё раз.",
+        "GIZMO_SYNC_FAILED"
       );
     }
   }

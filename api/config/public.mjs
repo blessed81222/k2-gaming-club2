@@ -1,3 +1,5 @@
+import { getGizmoConfigStatus } from "../../server/gizmo.mjs";
+
 export default function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
@@ -10,5 +12,6 @@ export default function handler(req, res) {
     ok: true,
     vkConfigured: Boolean(appId),
     vkAppId: appId || null,
+    gizmoConfigured: getGizmoConfigStatus().configured,
   });
 }

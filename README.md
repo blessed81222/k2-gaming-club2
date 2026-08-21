@@ -1,32 +1,44 @@
-# React + TypeScript + Vite
+# K2 Gaming Club — онлайн-бронирование
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Адаптивное приложение для бронирования компьютеров клуба K2. Поддерживает вход через VK ID, гостевой режим, общую занятость мест через Supabase, безопасную отмену гостевых броней и серверную синхронизацию с Gizmo.
 
-Currently, two official plugins are available:
+## Запуск
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Заполните `.env` по примеру `.env.example`.
+2. В первом терминале запустите `npm run server`.
+3. Во втором терминале запустите `npm run dev`.
+4. Откройте адрес, который покажет Vite (обычно `http://localhost:5173`).
 
-## React Compiler
+Проверка перед публикацией:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm run build
+npm run lint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Supabase
+
+Для новой базы выполните `supabase/bookings.sql`. Для существующей базы последовательно выполните:
+
+- `supabase_guest_cancel_token.sql`;
+- `supabase_gizmo_sync.sql` — перед включением Gizmo.
+
+## VK ID
+
+Заполните `VK_ID_APP_ID`, `VK_ID_APP_SECRET` и `VK_ID_REDIRECT_URI`. Адрес возврата в кабинете VK ID должен совпадать с адресом сайта.
+
+При первом посещении пользователь выбирает вход через VK или гостевой режим. Гостевые контакты и ключи отмены хранятся только в браузере текущего устройства.
+
+## Gizmo Web API
+
+На компьютере с Gizmo Server включите Web API и создайте оператора с доступом к API. Затем заполните:
+
+- `GIZMO_BASE_URL` — адрес Gizmo Server, например `http://192.168.1.10:8080`;
+- `GIZMO_OPERATOR_USERNAME` и `GIZMO_OPERATOR_PASSWORD`;
+- `GIZMO_API_VERSION` — `2` для актуального `/api/v2/reservations`, `1` для старого Web API;
+- `GIZMO_HOST_MAP` — JSON-сопоставление номера ПК на сайте и HostId в Gizmo, например `{"1":101,"2":102}`;
+- `GIZMO_REQUIRED=true`, если бронь на сайте должна считаться успешной только после ответа Gizmo.
+
+Секреты Gizmo используются только сервером и никогда не отправляются в браузер.
+
+Официальные материалы: [Web API](https://gizmo.tawk.help/article/web-api), [модель бронирований](https://github.com/GAMP/Gizmo.Web.Api.Client/blob/master/Client/ReservationsWebApiClient.cs).

@@ -1,942 +1,459 @@
-/* ==================================================
-   K2 GAMING CLUB — APP.CSS
-   Dark / Neon Gaming UI
-   ================================================== */
-
 :root {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #f5f7ff;
-  background: #070912;
+  --red: #f2384f;
+  --red-bright: #ff6073;
+  --ink: #f8f6f7;
+  --muted: #a9a1a5;
+  --line: rgba(255, 255, 255, 0.09);
+  --success: #57e39b;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: #070607;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  min-width: 100%;
-  min-height: 100%;
-  margin: 0;
-}
-
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+html { background: #070607; }
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 15% 10%, rgba(102, 55, 255, 0.22), transparent 28%),
-    radial-gradient(circle at 85% 15%, rgba(0, 220, 255, 0.13), transparent 25%),
-    radial-gradient(circle at 50% 100%, rgba(255, 0, 128, 0.10), transparent 35%),
-    #070912;
+    radial-gradient(circle at 12% 0%, rgba(218, 28, 53, 0.19), transparent 29rem),
+    radial-gradient(circle at 92% 20%, rgba(137, 21, 40, 0.13), transparent 30rem),
+    linear-gradient(180deg, #090708, #050505 72%);
 }
-
-/* ==================================================
-   APP
-   ================================================== */
+body.modal-open { overflow: hidden; }
+button, input, select { font: inherit; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid rgba(255, 96, 115, 0.45);
+  outline-offset: 3px;
+}
 
 .app {
-  min-height: 100vh;
   position: relative;
-  padding: 28px;
-  overflow: hidden;
   isolation: isolate;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(12px, 2vw, 30px);
+  overflow: hidden;
 }
-
 .app::before {
-  content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
-  pointer-events: none;
-  background:
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(to bottom, black, transparent 90%);
-}
-
-.app::after {
   content: "";
-  position: fixed;
-  width: 520px;
-  height: 520px;
-  left: -180px;
-  bottom: -260px;
-  z-index: -1;
-  border-radius: 50%;
-  background: rgba(123, 66, 255, 0.16);
-  filter: blur(90px);
   pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, #000, transparent 88%);
+}
+.app::after {
+  position: fixed;
+  right: -14rem;
+  bottom: -20rem;
+  z-index: -1;
+  width: 42rem;
+  height: 42rem;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  background: rgba(196, 20, 45, 0.11);
+  filter: blur(100px);
 }
 
-/* ==================================================
-   HEADER
-   ================================================== */
-
+.header, .main-content { width: min(100%, 1560px); margin-inline: auto; }
 .header {
   position: relative;
-  z-index: 5;
-  width: min(1450px, 100%);
-  margin: 0 auto 22px;
-  padding: 24px 28px;
-  display: flex;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(270px, 1fr) auto minmax(220px, auto);
   align-items: center;
-  gap: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 22px;
-  background: linear-gradient(
-    135deg,
-    rgba(19, 22, 38, 0.94),
-    rgba(10, 12, 24, 0.88)
-  );
-  box-shadow:
-    0 18px 55px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  gap: clamp(18px, 3vw, 48px);
+  margin-bottom: clamp(16px, 2vw, 26px);
+  padding: clamp(18px, 2vw, 27px) clamp(18px, 2.4vw, 34px);
+  border: 1px solid rgba(255, 71, 94, 0.19);
+  border-radius: 24px;
+  background: linear-gradient(105deg, rgba(38, 13, 18, 0.92), rgba(13, 11, 12, 0.95) 52%), #100d0e;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(18px);
 }
-
-.header h1 {
-  margin: 0;
-  font-size: clamp(24px, 3vw, 38px);
-  line-height: 1;
-  letter-spacing: -1px;
-  background: linear-gradient(90deg, #ffffff, #b9a8ff 45%, #6de7ff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.header p {
-  margin: 0;
-  color: #8f96ad;
-  font-size: 14px;
-  flex: 1;
-}
-
-.my-bookings-btn {
-  border: 1px solid rgba(139, 105, 255, 0.55);
-  border-radius: 12px;
-  padding: 12px 18px;
-  color: #ffffff;
-  background: linear-gradient(
-    135deg,
-    rgba(113, 67, 255, 0.95),
-    rgba(71, 103, 255, 0.95)
-  );
-  box-shadow:
-    0 8px 25px rgba(87, 66, 255, 0.28),
-    inset 0 1px 0 rgba(255,255,255,0.18);
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.my-bookings-btn:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 12px 32px rgba(87, 66, 255, 0.42),
-    inset 0 1px 0 rgba(255,255,255,0.2);
-}
-
-.my-bookings-btn:active {
-  transform: translateY(0);
-}
-
-/* ==================================================
-   MAP
-   ================================================== */
-
-.club-map {
-  position: relative;
-  width: min(1450px, 100%);
-  min-height: min(76vh, 880px);
-  margin: 0 auto;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(114, 65, 255, 0.10), transparent 30%),
-    radial-gradient(circle at 80% 20%, rgba(0, 217, 255, 0.07), transparent 28%),
-    linear-gradient(145deg, #111425, #090b14 72%);
-  box-shadow:
-    0 30px 90px rgba(0, 0, 0, 0.50),
-    inset 0 1px 0 rgba(255,255,255,0.06);
-}
-
-/* subtle floor */
-.club-map::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-  background-size: 34px 34px;
-}
-
-/* ==================================================
-   ZONES
-   ================================================== */
-
-.map-zone {
-  position: absolute;
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 20px;
-  background: rgba(255,255,255,0.025);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.035),
-    0 10px 30px rgba(0,0,0,0.18);
-  pointer-events: none;
-}
-
-.map-zone h2 {
-  position: absolute;
-  top: 12px;
-  left: 16px;
-  margin: 0;
-  font-size: 12px;
+.header-brand { min-width: 0; }
+.brand-kicker, .section-number, .modal-kicker, .auth-kicker {
+  display: block;
+  color: var(--red-bright);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  letter-spacing: 1.8px;
-  color: rgba(255,255,255,0.42);
 }
-
-.PREMIUM-zone {
-  left: 3%;
-  top: 5%;
-  width: 44%;
-  height: 38%;
-  border-color: rgba(164, 96, 255, 0.20);
-  background: linear-gradient(
-    145deg,
-    rgba(118, 55, 255, 0.08),
-    rgba(255,255,255,0.018)
-  );
+.header h1 {
+  margin: 5px 0 4px;
+  color: #fff;
+  font-size: clamp(28px, 3vw, 43px);
+  font-weight: 950;
+  line-height: 0.98;
+  letter-spacing: -0.06em;
 }
-
-.bootcamp-zone {
-  left: 55%;
-  top: 5%;
-  width: 42%;
-  height: 38%;
-  border-color: rgba(0, 214, 255, 0.18);
-  background: linear-gradient(
-    145deg,
-    rgba(0, 196, 255, 0.065),
-    rgba(255,255,255,0.018)
-  );
-}
-
-.standart-plus-zone {
-  left: 33%;
-  top: 48%;
-  width: 64%;
-  height: 24%;
-  border-color: rgba(255, 93, 190, 0.15);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 52, 169, 0.045),
-    rgba(255,255,255,0.018)
-  );
-}
-
-.standart-zone {
-  left: 33%;
-  top: 75%;
-  width: 64%;
-  height: 21%;
-  border-color: rgba(108, 255, 177, 0.12);
-  background: linear-gradient(
-    145deg,
-    rgba(59, 220, 137, 0.04),
-    rgba(255,255,255,0.015)
-  );
-}
-
-/* ==================================================
-   MAP LABELS
-   ================================================== */
-
-.map-food,
-.map-reception,
-.map-wc {
-  position: absolute;
-  display: flex;
+.header h1 span { color: var(--red); font-size: 0.58em; letter-spacing: 0.02em; text-transform: uppercase; }
+.header-brand p { margin: 0; color: #91898d; font-size: clamp(11px, 1.1vw, 14px); }
+.header-contact {
+  display: grid;
+  grid-template-columns: auto auto;
   align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 14px;
-  background: rgba(255,255,255,0.035);
-  color: rgba(255,255,255,0.38);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  pointer-events: none;
+  gap: 7px 18px;
+  color: #b5adb1;
+  font-size: 12px;
 }
-
-.map-food {
-  left: 3%;
-  bottom: 6%;
-  width: 25%;
-  height: 11%;
+.header-contact a { color: #c9c3c6; text-decoration: none; white-space: nowrap; transition: color 160ms ease; }
+.header-contact a:hover { color: #fff; }
+.contact-pill {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid rgba(87, 227, 155, 0.18);
+  border-radius: 999px;
+  color: #b7e7cd;
+  background: rgba(87, 227, 155, 0.055);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-
-.map-reception {
-  left: 3%;
-  bottom: 20%;
-  width: 25%;
-  height: 8%;
-}
-
-.map-wc {
-  left: 3%;
-  bottom: 31%;
-  width: 12%;
-  height: 7%;
-}
-
-/* ==================================================
-   COMPUTERS
-   ================================================== */
-
-.computer {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: clamp(52px, 5vw, 72px);
-  aspect-ratio: 1;
-  border: 1px solid rgba(151, 126, 255, 0.55);
-  border-radius: 16px;
-  color: #ffffff;
-  background:
-    radial-gradient(circle at 50% 32%, rgba(132, 94, 255, 0.36), transparent 35%),
-    linear-gradient(145deg, #27233f, #111323);
-  box-shadow:
-    0 8px 22px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.10),
-    0 0 0 1px rgba(102,74,255,0.06);
-  font-size: 18px;
-  font-weight: 900;
-  cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease;
-  z-index: 2;
-}
-
-.computer::after {
-  content: "";
-  position: absolute;
+.status-dot, .legend-dot {
+  display: inline-block;
   width: 7px;
   height: 7px;
-  top: 8px;
-  right: 9px;
   border-radius: 50%;
-  background: #55f59a;
-  box-shadow: 0 0 10px rgba(85,245,154,0.9);
+  background: var(--success);
+  box-shadow: 0 0 10px rgba(87, 227, 155, 0.8);
 }
-
-.computer:hover {
-  transform: translate(-50%, -50%) scale(1.08);
-  border-color: rgba(124, 231, 255, 0.85);
-  box-shadow:
-    0 14px 30px rgba(0,0,0,0.45),
-    0 0 25px rgba(90, 125, 255, 0.28),
-    inset 0 1px 0 rgba(255,255,255,0.14);
+.account-button {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-width: 218px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  color: #fff;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
+.account-button:hover { transform: translateY(-1px); border-color: rgba(255, 85, 106, 0.32); background: rgba(255, 58, 79, 0.07); }
+.account-avatar, .profile-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(145deg, #cb263b, #701321);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.16);
+  font-size: 13px;
+  font-weight: 900;
+}
+.account-avatar.is-vk, .profile-avatar.is-vk { background: linear-gradient(145deg, #2879f3, #0f4fae); }
+.account-copy { display: flex; min-width: 0; flex-direction: column; }
+.account-copy strong, .account-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-copy strong { font-size: 13px; }
+.account-copy small { margin-top: 2px; color: #8d8589; font-size: 10px; }
+.account-chevron { color: #766e72; font-size: 22px; }
 
-.computer.selected {
-  border-color: #72ddff;
+.main-content { min-width: 0; }
+.availability-panel {
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr);
+  align-items: center;
+  gap: 18px 28px;
+  margin-bottom: 14px;
+  padding: 4px clamp(2px, 1vw, 12px);
+}
+.availability-title { display: flex; align-items: flex-start; gap: 15px; }
+.section-number { padding-top: 7px; }
+.availability-title h2 { margin: 0; color: #fff; font-size: clamp(22px, 2.3vw, 34px); line-height: 1.08; letter-spacing: -0.04em; }
+.availability-title p { margin: 6px 0 0; color: #8c8588; font-size: 12px; }
+.map-legend { grid-column: 1 / -1; display: flex; align-items: center; gap: 20px; color: #aaa2a6; font-size: 11px; }
+.map-legend > span { display: inline-flex; align-items: center; gap: 8px; }
+.legend-dot.busy { background: var(--red); box-shadow: 0 0 9px rgba(242, 56, 79, 0.8); }
+.mobile-map-hint { display: none; margin: 0 4px 8px; color: #8f878b; font-size: 11px; }
+
+.club-map-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: rgba(242, 56, 79, 0.45) transparent;
+  scrollbar-width: thin;
+}
+.club-map-scroll::-webkit-scrollbar { height: 7px; }
+.club-map-scroll::-webkit-scrollbar-thumb { border-radius: 99px; background: rgba(242, 56, 79, 0.42); }
+.club-map {
+  position: relative;
+  width: 100%;
+  min-height: clamp(690px, 76vh, 900px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 65, 86, 0.16);
+  border-radius: clamp(20px, 2vw, 30px);
   background:
-    radial-gradient(circle at 50% 32%, rgba(0, 222, 255, 0.45), transparent 38%),
-    linear-gradient(145deg, #163c4a, #111a28);
-  box-shadow:
-    0 0 0 3px rgba(77, 216, 255, 0.13),
-    0 0 32px rgba(45, 205, 255, 0.45);
+    radial-gradient(circle at 20% 15%, rgba(242, 56, 79, 0.095), transparent 28%),
+    radial-gradient(circle at 80% 18%, rgba(130, 17, 35, 0.085), transparent 27%),
+    linear-gradient(145deg, #151113, #090809 74%);
+  box-shadow: 0 35px 95px rgba(0, 0, 0, 0.52), inset 0 1px rgba(255, 255, 255, 0.045);
 }
-
-.computer.selected::after {
-  background: #72ddff;
-  box-shadow: 0 0 12px #72ddff;
+.club-map::before {
+  position: absolute; inset: 0; content: ""; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 68, 89, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 68, 89, 0.022) 1px, transparent 1px);
+  background-size: 34px 34px;
 }
-
-.computer.booked {
-  border-color: rgba(255, 78, 112, 0.7);
-  background:
-    radial-gradient(circle at 50% 32%, rgba(255, 61, 91, 0.25), transparent 38%),
-    linear-gradient(145deg, #3a1825, #17101a);
-  color: #ffb5c1;
+.club-map::after { position: absolute; inset: 14px; border: 1px solid rgba(255, 255, 255, 0.025); border-radius: 20px; content: ""; pointer-events: none; }
+.map-zone {
+  position: absolute;
+  border: 1px solid rgba(255, 82, 103, 0.19);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(242, 56, 79, 0.055), rgba(255, 255, 255, 0.012));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+  pointer-events: none;
 }
-
-.computer.booked::after {
-  background: #ff4e6e;
-  box-shadow: 0 0 11px rgba(255, 78, 110, 0.9);
+.map-zone h3 {
+  position: absolute; top: 14px; left: 17px; margin: 0; color: rgba(255, 194, 201, 0.68);
+  font-size: clamp(9px, 0.9vw, 12px); font-weight: 850; letter-spacing: 0.16em; text-transform: uppercase;
 }
-
-.computer.booked:hover {
-  transform: translate(-50%, -50%) scale(1.04);
+.map-zone > span { position: absolute; top: 31px; left: 17px; color: rgba(179, 154, 158, 0.43); font-size: 8px; }
+.PREMIUM-zone { left: 3%; top: 5%; width: 44%; height: 38%; }
+.bootcamp-zone { left: 55%; top: 5%; width: 42%; height: 38%; }
+.standart-plus-zone { left: 16%; top: 48%; width: 66%; height: 24%; }
+.standart-zone { left: 16%; top: 75%; width: 66%; height: 21%; }
+.map-status {
+  position: absolute; top: 14px; left: 50%; z-index: 5; transform: translateX(-50%); padding: 8px 13px;
+  border: 1px solid var(--line); border-radius: 999px; color: #a59da1; background: rgba(8, 7, 7, 0.78); font-size: 10px; backdrop-filter: blur(10px);
 }
+.map-status.error { color: #ffbbc3; border-color: rgba(242, 56, 79, 0.24); }
+.computer {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  width: clamp(48px, 4.5vw, 66px);
+  min-width: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 81, 101, 0.5);
+  border-radius: 15px;
+  color: #fff;
+  background: radial-gradient(circle at 50% 25%, rgba(255, 65, 86, 0.27), transparent 40%), linear-gradient(145deg, #391820, #121012);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42), 0 0 14px rgba(242, 56, 79, 0.08), inset 0 1px rgba(255, 255, 255, 0.09);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+.computer::after {
+  position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; border-radius: 50%; content: "";
+  background: var(--success); box-shadow: 0 0 9px rgba(87, 227, 155, 0.9);
+}
+.computer-screen { place-self: center; font-size: clamp(14px, 1.5vw, 18px); font-weight: 920; }
+.computer:hover { z-index: 6; transform: translate(-50%, -50%) scale(1.08); border-color: var(--red-bright); box-shadow: 0 14px 28px rgba(0, 0, 0, 0.48), 0 0 25px rgba(242, 56, 79, 0.3); }
+.computer.selected { z-index: 7; border-color: #fff; box-shadow: 0 0 0 3px rgba(242, 56, 79, 0.18), 0 0 30px rgba(242, 56, 79, 0.55); }
+.computer.booked { border-color: rgba(255, 88, 106, 0.25); color: #d9b6ba; background: linear-gradient(145deg, #291015, #100b0d); filter: saturate(0.66); }
+.computer.booked::after { background: var(--red); box-shadow: 0 0 9px rgba(242, 56, 79, 0.85); }
+.computer-booking-until { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); color: #ff9eaa; font-size: 7px; font-weight: 850; white-space: nowrap; }
 
-/* ==================================================
-   MODALS
-   ================================================== */
-
-.booking-overlay {
+.modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(2, 3, 9, 0.76);
-  backdrop-filter: blur(12px);
-  animation: overlayIn 0.18s ease;
-}
-
-.booking-modal {
-  position: relative;
-  width: min(470px, 100%);
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 30px;
-  border: 1px solid rgba(255,255,255,0.11);
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 90% 0%, rgba(109, 75, 255, 0.15), transparent 35%),
-    linear-gradient(145deg, #171a2b, #0d0f1b);
-  box-shadow:
-    0 35px 100px rgba(0,0,0,0.65),
-    0 0 50px rgba(84, 65, 255, 0.10),
-    inset 0 1px 0 rgba(255,255,255,0.06);
-  animation: modalIn 0.22s ease;
-}
-
-.booking-modal h2 {
-  margin: 0 0 20px;
-  font-size: 25px;
-}
-
-.booking-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 38px;
-  height: 38px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 11px;
-  color: #aab0c2;
-  background: rgba(255,255,255,0.04);
-  font-size: 24px;
-  cursor: pointer;
-  transition: 0.18s ease;
-}
-
-.booking-close:hover {
-  color: #fff;
-  background: rgba(255, 67, 98, 0.15);
-  border-color: rgba(255, 67, 98, 0.35);
-}
-
-.booking-pc {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 22px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.045);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-
-.booking-pc span {
-  font-weight: 800;
-}
-
-.booking-pc small {
-  color: #9c8cff;
-  font-weight: 700;
-}
-
-/* ==================================================
-   FORM
-   ================================================== */
-
-.booking-modal label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 14px 0;
-  color: #aeb4c7;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.booking-modal input,
-.booking-modal select {
-  width: 100%;
-  min-height: 46px;
-  padding: 0 13px;
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 12px;
-  outline: none;
-  color: #f5f7ff;
-  background: rgba(4, 6, 14, 0.72);
-  font: inherit;
-  transition: 0.18s ease;
-}
-
-.booking-modal input::placeholder {
-  color: #555c70;
-}
-
-.booking-modal input:focus,
-.booking-modal select:focus {
-  border-color: rgba(107, 214, 255, 0.75);
-  box-shadow:
-    0 0 0 3px rgba(72, 208, 255, 0.09),
-    0 0 20px rgba(72, 208, 255, 0.08);
-}
-
-.booking-modal select option {
-  color: #fff;
-  background: #121522;
-}
-
-/* ==================================================
-   PRICE
-   ================================================== */
-
-.booking-price {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 22px 0 16px;
-  padding: 17px;
-  border: 1px solid rgba(122, 91, 255, 0.20);
-  border-radius: 15px;
-  background: rgba(91, 64, 255, 0.07);
-}
-
-.booking-price span {
-  color: #969db3;
-}
-
-.booking-price strong {
-  color: #8be6ff;
-  font-size: 22px;
-}
-
-/* ==================================================
-   BUTTONS
-   ================================================== */
-
-.booking-submit {
-  width: 100%;
-  min-height: 50px;
-  border: 1px solid rgba(118, 232, 255, 0.28);
-  border-radius: 13px;
-  color: #071017;
-  background: linear-gradient(135deg, #78e7ff, #8d9cff);
-  box-shadow:
-    0 12px 30px rgba(78, 186, 255, 0.20),
-    inset 0 1px 0 rgba(255,255,255,0.55);
-  font-size: 15px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.booking-submit:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 16px 38px rgba(78, 186, 255, 0.32),
-    inset 0 1px 0 rgba(255,255,255,0.6);
-}
-
-.booking-submit:active {
-  transform: translateY(0);
-}
-
-/* ==================================================
-   MY BOOKINGS
-   ================================================== */
-
-.my-booking-card {
-  margin-top: 14px;
   padding: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  background: rgba(255,255,255,0.035);
+  overflow-y: auto;
+  background: rgba(4, 3, 3, 0.78);
+  backdrop-filter: blur(15px);
+  animation: overlay-in 180ms ease both;
+}
+.booking-modal, .auth-modal {
+  position: relative;
+  width: min(100%, 510px);
+  max-height: min(92vh, 860px);
+  max-height: min(92dvh, 860px);
+  overflow-y: auto;
+  border: 1px solid rgba(255, 77, 98, 0.2);
+  border-radius: 26px;
+  background: radial-gradient(circle at 100% 0%, rgba(242, 56, 79, 0.13), transparent 30%), linear-gradient(145deg, #1c1316, #0d0b0c 76%);
+  box-shadow: 0 35px 100px rgba(0, 0, 0, 0.68), inset 0 1px rgba(255, 255, 255, 0.05);
+  animation: modal-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.booking-modal { padding: clamp(22px, 4vw, 34px); }
+.booking-modal::-webkit-scrollbar, .auth-modal::-webkit-scrollbar { width: 6px; }
+.booking-modal::-webkit-scrollbar-thumb, .auth-modal::-webkit-scrollbar-thumb { border-radius: 99px; background: rgba(255, 255, 255, 0.12); }
+.modal-close {
+  position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 38px; height: 38px; padding: 0 0 3px;
+  border: 1px solid var(--line); border-radius: 11px; color: #a89fa3; background: rgba(255, 255, 255, 0.035); font-size: 24px; cursor: pointer;
+}
+.modal-close:hover { color: #fff; border-color: rgba(242, 56, 79, 0.35); background: rgba(242, 56, 79, 0.1); }
+.booking-modal h2 { max-width: calc(100% - 45px); margin: 7px 0 21px; color: #fff; font-size: clamp(24px, 5vw, 31px); line-height: 1.06; letter-spacing: -0.04em; }
+.booking-pc {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; padding: 12px 14px;
+  border: 1px solid rgba(87, 227, 155, 0.12); border-radius: 12px; background: rgba(87, 227, 155, 0.035);
+}
+.booking-pc span { display: inline-flex; align-items: center; gap: 8px; color: #bae5ce; font-size: 11px; }
+.booking-pc strong { color: #b7afb3; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.form-grid label { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: #aca3a7; font-size: 11px; font-weight: 700; }
+.form-grid .full-field { grid-column: 1 / -1; }
+.form-grid input, .form-grid select {
+  width: 100%; min-width: 0; min-height: 47px; padding: 0 13px; border: 1px solid var(--line); border-radius: 11px; outline: none;
+  color: #f6f3f4; background: rgba(255, 255, 255, 0.035); font-size: 13px; transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+.form-grid input::placeholder { color: #625b5e; }
+.form-grid input:focus, .form-grid select:focus { border-color: rgba(255, 82, 103, 0.55); background: rgba(242, 56, 79, 0.045); box-shadow: 0 0 0 3px rgba(242, 56, 79, 0.09); }
+.form-error, .auth-error { margin-top: 14px; padding: 10px 12px; border: 1px solid rgba(255, 80, 99, 0.24); border-radius: 10px; color: #ffc0c7; background: rgba(242, 56, 79, 0.08); font-size: 11px; }
+.booking-total { display: flex; align-items: end; justify-content: space-between; margin: 19px 0 13px; padding-top: 16px; border-top: 1px solid var(--line); }
+.booking-total span { color: #8f878b; font-size: 12px; }
+.booking-total strong { color: #fff; font-size: 27px; letter-spacing: -0.04em; }
+.primary-button {
+  width: 100%; min-height: 52px; border: 1px solid rgba(255, 117, 133, 0.42); border-radius: 13px; color: #fff;
+  background: linear-gradient(135deg, #ef3b52, #9c182c); box-shadow: 0 13px 28px rgba(193, 25, 48, 0.28), inset 0 1px rgba(255, 255, 255, 0.18);
+  font-weight: 850; cursor: pointer; transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+.primary-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 16px 34px rgba(211, 31, 55, 0.36); }
+.primary-button:disabled { opacity: 0.55; cursor: wait; }
+.booking-footnote { margin: 10px 0 0; color: #716a6d; font-size: 10px; text-align: center; }
+
+.auth-overlay {
+  z-index: 300;
+  background: radial-gradient(circle at 50% 35%, rgba(185, 24, 47, 0.19), transparent 30rem), rgba(3, 2, 3, 0.88);
+}
+.auth-modal { width: min(100%, 590px); padding: clamp(26px, 5vw, 45px); text-align: center; }
+.auth-brand {
+  position: relative; display: grid; place-items: center; width: 62px; height: 62px; margin: 0 auto 20px;
+  border: 1px solid rgba(255, 91, 111, 0.38); border-radius: 19px; background: linear-gradient(145deg, #3e171f, #120d0f);
+  box-shadow: 0 0 35px rgba(242, 56, 79, 0.18), inset 0 1px rgba(255, 255, 255, 0.09);
+}
+.auth-brand span { color: #fff; font-size: 22px; font-weight: 950; letter-spacing: -0.08em; }
+.auth-brand i { position: absolute; right: 7px; bottom: 7px; width: 8px; height: 8px; border: 2px solid #221116; border-radius: 50%; background: var(--red); box-shadow: 0 0 9px rgba(242, 56, 79, 0.9); }
+.auth-kicker { margin-bottom: 7px; }
+.auth-modal h2 { margin: 0; color: #fff; font-size: clamp(27px, 6vw, 38px); line-height: 1.06; letter-spacing: -0.045em; }
+.auth-subtitle { max-width: 450px; margin: 12px auto 26px; color: #9c9498; font-size: 13px; line-height: 1.55; }
+.auth-options { display: grid; gap: 11px; }
+.auth-option {
+  display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; align-items: center; gap: 14px; width: 100%; min-height: 78px; padding: 12px 16px;
+  border: 1px solid var(--line); border-radius: 16px; color: #fff; text-align: left; background: rgba(255, 255, 255, 0.03); cursor: pointer;
+  transition: transform 170ms ease, border-color 170ms ease, background 170ms ease, box-shadow 170ms ease;
+}
+.auth-option:hover { transform: translateY(-2px); border-color: rgba(255, 85, 106, 0.32); background: rgba(255, 255, 255, 0.055); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25); }
+.vk-option { border-color: rgba(67, 139, 235, 0.28); background: linear-gradient(100deg, rgba(30, 99, 192, 0.11), rgba(255, 255, 255, 0.025)); }
+.vk-option:hover { border-color: rgba(70, 147, 248, 0.5); }
+.auth-icon { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 14px; box-shadow: inset 0 1px rgba(255, 255, 255, 0.16); }
+.vk-mark { background: linear-gradient(145deg, #3787ee, #1762c6); font-size: 15px; font-weight: 950; letter-spacing: -0.08em; }
+.guest-mark { position: relative; overflow: hidden; background: linear-gradient(145deg, #421a22, #82192a); }
+.guest-mark i:first-child { position: absolute; top: 11px; width: 13px; height: 13px; border: 2px solid #fff; border-radius: 50%; }
+.guest-mark i:last-child { position: absolute; bottom: 8px; width: 25px; height: 14px; border: 2px solid #fff; border-bottom: 0; border-radius: 18px 18px 0 0; }
+.auth-option-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.auth-option-copy strong { font-size: 14px; }
+.auth-option-copy small { color: #8e868a; font-size: 10px; }
+.auth-arrow { color: #82797d; font-size: 19px; }
+.auth-note { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 21px 0 0; color: #70696c; font-size: 9px; }
+.lock-icon { width: 8px; height: 7px; border: 1px solid #777074; border-radius: 2px; }
+
+.profile-modal { width: min(100%, 680px); }
+.profile-summary { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.028); }
+.profile-avatar { width: 45px; height: 45px; }
+.profile-summary > div { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.profile-summary strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.profile-summary small { color: #8f878b; font-size: 10px; }
+.switch-login { padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; color: #aaa2a6; background: transparent; font-size: 10px; cursor: pointer; }
+.switch-login:hover { color: #fff; border-color: rgba(242, 56, 79, 0.32); }
+.bookings-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.my-booking-card { padding: 16px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255, 255, 255, 0.027); }
+.booking-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.booking-card-head span { color: var(--red-bright); font-size: 8px; font-weight: 850; letter-spacing: 0.11em; text-transform: uppercase; }
+.booking-card-head h3 { margin: 2px 0 0; color: #fff; font-size: 20px; }
+.booking-card-head > strong { color: #fff; font-size: 17px; }
+.my-booking-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 15px 0; }
+.my-booking-card dl > div { display: flex; min-width: 0; flex-direction: column; }
+.my-booking-card dt { color: #716a6d; font-size: 8px; text-transform: uppercase; }
+.my-booking-card dd { overflow: hidden; margin: 2px 0 0; color: #bdb6b9; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.cancel-booking { width: 100%; min-height: 38px; border: 1px solid rgba(242, 56, 79, 0.2); border-radius: 9px; color: #f49aa5; background: rgba(242, 56, 79, 0.05); font-size: 10px; font-weight: 750; cursor: pointer; }
+.cancel-booking:hover { color: #fff; border-color: rgba(242, 56, 79, 0.45); background: rgba(242, 56, 79, 0.13); }
+.empty-bookings { padding: 36px 20px; border: 1px dashed rgba(255, 255, 255, 0.11); border-radius: 16px; text-align: center; }
+.empty-bookings > span { color: var(--red); font-size: 28px; }
+.empty-bookings h3 { margin: 8px 0 4px; color: #fff; font-size: 16px; }
+.empty-bookings p { margin: 0; color: #81797d; font-size: 11px; }
+.toast {
+  position: fixed; right: clamp(14px, 3vw, 30px); bottom: clamp(14px, 3vw, 30px); z-index: 400; display: flex; align-items: center; gap: 10px;
+  max-width: calc(100vw - 28px); padding: 12px 15px; border: 1px solid rgba(87, 227, 155, 0.22); border-radius: 12px; color: #d7f6e5;
+  background: rgba(10, 25, 17, 0.92); box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4); font-size: 12px; backdrop-filter: blur(12px); animation: toast-in 220ms ease both;
+}
+.toast span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; color: #07160e; background: var(--success); font-size: 11px; font-weight: 900; }
+
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-in { from { opacity: 0; transform: translateY(14px) scale(0.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 1100px) {
+  .header { grid-template-columns: minmax(240px, 1fr) minmax(210px, auto); }
+  .header-contact { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(3, auto); justify-content: start; }
+  .contact-pill { grid-column: auto; }
+  .availability-panel { grid-template-columns: 1fr; }
 }
 
-.my-booking-card h3 {
-  margin: 0 0 12px;
-  font-size: 18px;
-}
-
-.my-booking-card p {
-  margin: 7px 0;
-  color: #9ea5b8;
-  font-size: 13px;
-}
-
-.my-booking-card strong {
-  display: block;
-  margin-top: 12px;
-  color: #82e8ff;
-  font-size: 18px;
-}
-
-.cancel-booking {
-  width: 100%;
-  margin-top: 14px;
-  min-height: 42px;
-  border: 1px solid rgba(255, 74, 104, 0.25);
-  border-radius: 10px;
-  color: #ff9cac;
-  background: rgba(255, 61, 91, 0.07);
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.18s ease;
-}
-
-.cancel-booking:hover {
-  background: rgba(255, 61, 91, 0.15);
-  border-color: rgba(255, 74, 104, 0.5);
-}
-
-/* ==================================================
-   SCROLLBAR
-   ================================================== */
-
-.booking-modal::-webkit-scrollbar {
-  width: 7px;
-}
-
-.booking-modal::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.booking-modal::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  background: rgba(255,255,255,0.12);
-}
-
-/* ==================================================
-   ANIMATIONS
-   ================================================== */
-
-@keyframes overlayIn {
-  from {
-    opacity: 0;
+@media (max-width: 760px) {
+  .app { padding: 10px; }
+  .header { grid-template-columns: minmax(0, 1fr) auto; gap: 14px; padding: 16px; border-radius: 19px; }
+  .header h1 { font-size: 28px; }
+  .header-brand p { display: none; }
+  .account-button { grid-template-columns: 38px auto; min-width: 0; padding: 7px; }
+  .account-avatar { width: 38px; height: 38px; }
+  .account-copy, .account-chevron { display: none; }
+  .header-contact {
+    grid-template-columns: auto auto auto; width: calc(100vw - 54px); overflow-x: auto; gap: 12px; padding-bottom: 2px; font-size: 10px; scrollbar-width: none;
   }
-
-  to {
-    opacity: 1;
-  }
+  .header-contact::-webkit-scrollbar { display: none; }
+  .availability-panel { gap: 13px; padding-inline: 4px; }
+  .availability-title { gap: 10px; }
+  .availability-title h2 { font-size: 23px; }
+  .availability-title p { font-size: 10px; }
+  .map-legend { gap: 13px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .mobile-map-hint { display: block; }
+  .club-map-scroll { padding-bottom: 6px; }
+  .club-map { width: 760px; min-height: 680px; border-radius: 21px; }
+  .computer { width: 50px; }
+  .computer-screen { font-size: 15px; }
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .booking-modal, .auth-modal { width: 100%; max-height: 94dvh; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 24px 24px 0 0; }
+  .auth-modal { padding: 28px 18px 24px; }
+  .auth-brand { width: 54px; height: 54px; margin-bottom: 15px; }
+  .auth-subtitle { margin-bottom: 20px; }
+  .bookings-list { grid-template-columns: 1fr; }
 }
 
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.97);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+@media (max-width: 470px) {
+  .brand-kicker { font-size: 8px; }
+  .auth-option { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 11px; min-height: 72px; padding: 10px 12px; }
+  .auth-icon { width: 44px; height: 44px; }
+  .auth-option-copy strong { font-size: 13px; }
+  .auth-option-copy small { font-size: 9px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .full-field { grid-column: auto; }
+  .profile-summary { flex-wrap: wrap; }
+  .switch-login { width: 100%; }
+  .toast { right: 12px; bottom: 12px; left: 12px; }
 }
 
-/* ==================================================
-   ADAPTIVE
-   ================================================== */
-
-@media (max-width: 900px) {
-  .app {
-    padding: 14px;
-  }
-
-  .header {
-    padding: 18px;
-    border-radius: 18px;
-    flex-wrap: wrap;
-  }
-
-  .header p {
-    flex-basis: 100%;
-    order: 3;
-  }
-
-  .club-map {
-    min-height: 700px;
-    border-radius: 20px;
-  }
-
-  .computer {
-    width: 48px;
-    border-radius: 13px;
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 600px) {
-  .header h1 {
-    font-size: 25px;
-  }
-
-  .my-bookings-btn {
-    width: 100%;
-  }
-
-  .club-map {
-    min-height: 620px;
-  }
-
-  .map-zone h2 {
-    font-size: 9px;
-    letter-spacing: 1px;
-  }
-
-  .booking-modal {
-    padding: 24px 18px;
-    border-radius: 20px;
-  }
-}
-
-/* ==================================================
-   K2 RED GAMING SKIN
-   Геометрия карты НЕ меняется.
-   ================================================== */
-
-:root {
-  --k2-red: #ff334d;
-  --k2-red-bright: #ff5267;
-  --k2-red-dark: #7f1425;
-}
-
-body {
-  background:
-    radial-gradient(circle at 15% 10%, rgba(255,35,55,.16), transparent 30%),
-    radial-gradient(circle at 85% 20%, rgba(180,20,40,.12), transparent 28%),
-    radial-gradient(circle at 50% 100%, rgba(255,0,35,.10), transparent 36%),
-    #07080d;
-}
-
-.app::after {
-  background: rgba(255,35,55,.14);
-}
-
-.header {
-  border-color: rgba(255,55,75,.22);
-  background: linear-gradient(135deg, rgba(35,12,18,.96), rgba(12,10,15,.94));
-  box-shadow:
-    0 18px 55px rgba(0,0,0,.48),
-    0 0 35px rgba(255,30,55,.07),
-    inset 0 1px 0 rgba(255,255,255,.06);
-}
-
-.header h1 {
-  background: linear-gradient(90deg, #fff, #ffb0b8 42%, #ff334d);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.club-contacts {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-left: auto;
-  margin-right: 4px;
-  color: rgba(255,220,224,.78);
-  font-size: 12px;
-  line-height: 1.35;
-  white-space: nowrap;
-}
-
-.club-contacts div:first-child {
-  color: rgba(255,238,240,.88);
-}
-
-.club-contacts div:last-child {
-  color: #ff6575;
-  font-weight: 700;
-}
-
-.my-bookings-btn,
-.booking-submit {
-  border-color: rgba(255,70,90,.48) !important;
-  background: linear-gradient(135deg,#e52a42,#851526) !important;
-  box-shadow:
-    0 8px 25px rgba(150,20,40,.28),
-    0 0 18px rgba(255,45,65,.12),
-    inset 0 1px 0 rgba(255,255,255,.16) !important;
-}
-
-.my-bookings-btn:hover,
-.booking-submit:hover {
-  filter: brightness(1.12);
-  box-shadow:
-    0 10px 32px rgba(210,25,50,.38),
-    0 0 24px rgba(255,45,65,.22) !important;
-}
-
-.club-map {
-  border-color: rgba(255,55,75,.18);
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255,35,55,.10), transparent 30%),
-    radial-gradient(circle at 80% 20%, rgba(180,20,40,.07), transparent 28%),
-    linear-gradient(145deg,#151016,#090b10 72%);
-  box-shadow:
-    0 30px 90px rgba(0,0,0,.55),
-    0 0 55px rgba(255,25,50,.06),
-    inset 0 1px 0 rgba(255,255,255,.06);
-}
-
-.club-map::before {
-  background:
-    linear-gradient(rgba(255,60,75,.022) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,60,75,.022) 1px,transparent 1px);
-  background-size: 34px 34px;
-}
-
-.PREMIUM-zone {
-  border-color: rgba(255,70,90,.30) !important;
-  background: linear-gradient(145deg,rgba(255,35,55,.10),rgba(255,255,255,.018)) !important;
-}
-
-.bootcamp-zone {
-  border-color: rgba(255,80,95,.25) !important;
-  background: linear-gradient(145deg,rgba(210,25,50,.075),rgba(255,255,255,.018)) !important;
-}
-
-.standart-plus-zone {
-  border-color: rgba(255,55,80,.26) !important;
-  background: linear-gradient(145deg,rgba(255,30,65,.075),rgba(255,255,255,.018)) !important;
-}
-
-.standart-zone {
-  border-color: rgba(255,90,105,.20) !important;
-  background: linear-gradient(145deg,rgba(180,25,45,.055),rgba(255,255,255,.015)) !important;
-}
-
-.map-zone h2 {
-  color: rgba(255,185,192,.58);
-  text-shadow: 0 0 14px rgba(255,45,65,.24);
-}
-
-.map-food,
-.map-reception,
-.map-wc {
-  border-color: rgba(255,65,85,.13) !important;
-  background: rgba(255,40,60,.035) !important;
-  color: rgba(255,190,198,.48) !important;
-}
-
-.computer {
-  border-color: rgba(255,70,90,.58) !important;
-  background:
-    radial-gradient(circle at 50% 32%,rgba(255,45,70,.34),transparent 35%),
-    linear-gradient(145deg,#3a1720,#121116) !important;
-  box-shadow:
-    0 8px 22px rgba(0,0,0,.40),
-    0 0 12px rgba(255,35,60,.10),
-    inset 0 1px 0 rgba(255,255,255,.10) !important;
-}
-
-.computer:hover {
-  box-shadow:
-    0 0 22px rgba(255,45,65,.45),
-    0 7px 20px rgba(0,0,0,.5) !important;
-}
-
-.computer.selected {
-  border-color: #ff5267 !important;
-  background:
-    radial-gradient(circle at 50% 32%,rgba(255,80,100,.45),transparent 36%),
-    linear-gradient(145deg,#8d2033,#34131b) !important;
-  box-shadow:
-    0 0 0 2px rgba(255,82,103,.18),
-    0 0 30px rgba(255,45,65,.68),
-    inset 0 0 18px rgba(255,70,90,.20) !important;
-}
-
-.computer.booked {
-  border-color: rgba(255,120,130,.65) !important;
-  background: linear-gradient(145deg,#5e1723,#250b11) !important;
-}
-
-.booking-overlay {
-  background: rgba(5,2,5,.76) !important;
-}
-
-.booking-modal {
-  background: linear-gradient(145deg,rgba(34,15,20,.98),rgba(12,10,14,.99)) !important;
-  border-color: rgba(255,65,85,.18) !important;
-  box-shadow:
-    0 30px 90px rgba(0,0,0,.68),
-    0 0 55px rgba(255,35,55,.12) !important;
-}
-
-.booking-modal input,
-.booking-modal select {
-  border-color: rgba(255,65,85,.16) !important;
-  background: rgba(255,40,60,.045) !important;
-}
-
-.booking-modal input:focus,
-.booking-modal select:focus {
-  border-color: rgba(255,75,95,.65) !important;
-  box-shadow: 0 0 0 3px rgba(255,50,70,.12) !important;
-}
-
-.booking-price {
-  background: rgba(255,40,60,.07) !important;
-  border-color: rgba(255,70,90,.20) !important;
-}
-
-.my-booking-card {
-  background: rgba(255,40,60,.045) !important;
-  border-color: rgba(255,65,85,.12) !important;
-}
-/* =========================================================
-   ЦЕНТРИРОВАНИЕ НИЖНИХ ЗОН
-   Геометрию ПК НЕ меняем
-   ========================================================= */
-
-.standart-plus-zone {
-  left: 16% !important;
-  width: 66% !important;
-}
-
-.standart-zone {
-  left: 16% !important;
-  width: 66% !important;
-}
-/* ==================================================
-   SHARED BOOKING STATUS
-   ================================================== */
-.computer-booking-until {
-  position: absolute;
-  left: 50%;
-  bottom: 7px;
-  transform: translateX(-50%);
-  font-size: 8px;
-  line-height: 1;
-  font-weight: 800;
-  letter-spacing: .4px;
-  color: rgba(255, 190, 198, .9);
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.computer.booked .computer-booking-until {
-  color: #ffb5c1;
-  text-shadow: 0 0 8px rgba(255, 78, 110, .45);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

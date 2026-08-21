@@ -68,6 +68,13 @@ export default async function handler(req, res) {
           });
         }
 
+        if (error?.code === "GIZMO_SYNC_FAILED") {
+          return res.status(502).json({
+            ok: false,
+            error: error.message,
+          });
+        }
+
         throw error;
       }
     }
