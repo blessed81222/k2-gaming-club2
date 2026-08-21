@@ -3,7 +3,7 @@ import { createBooking, listBookings, listMyBookings } from "../../server/bookin
 export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
-      const url = new URL(req.url, "https://local.invalid");
+     
       const mine = url.searchParams.get("mine") === "true";
       const date = String(req.query?.date || url.searchParams.get("date") || "");
 
